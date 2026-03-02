@@ -296,6 +296,7 @@ app.post('/api/topup-info', express.json(), async (req, res) => {
     }
 });
 
+
 /**
  * API: Create Topup Checkout Session
  */
@@ -312,22 +313,6 @@ app.post('/api/checkout-topup', express.json(), async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
-
-// --- DEV-ONLY DEBUG ROUTE ---
-// This route helps you verify metadata without opening the Stripe dashboard
-if (isDev) {
-    app.use((err, req, res, next) => {
-        console.error(err.stack);
-        res.status(500).send('Dev Error: ' + err.message);
-    });
-
-    app.get('/debug/customer/:email', async (req, res) => {
-        try {
-            const customers = await stripe.customers.list({ email: req.params.email, limit: 1 });
-            res.json(customers.data[0] || { message: "No customer found" });
-        } catch (e) { res.status(500).send(e.message); }
-    });
-}
 
 /**
  * 1. Webhook: The Engine
@@ -557,6 +542,30 @@ app.post('/billing/portal-by-email', express.json(), async (req, res) => {
     } catch (e) {
         console.error('[portal-by-email] Error:', e.message);
         res.status(500).json({ error: e.message });
+    }
+});
+
+/**
+ * API: Fetch info by litellm key
+ */
+app.get('/api/key-info', express.json(), async (req, res) => {
+    const { key } = req.query;
+    if (!key) return res.status(400).json({ error: 'key is required' });
+    let q = key.trim();
+
+    try {
+
+        const keyInfoResp = await litellm.get(`/key/info?key=${encodeURIComponent(q)}`);
+        const metadata = keyInfoResp.data?.metadata || keyInfoResp.data?.info?.metadata || {};
+        const availableBudget = metadata.available_budget || 0;
+        res.json({
+            available_budget: availableBudget
+        });
+
+    } catch (e) {
+
+        console.error('[topup-info] Error:', e.message);
+        return res.status(404).json({ error: 'Invalid LiteLLM key or not found.' });
     }
 });
 
