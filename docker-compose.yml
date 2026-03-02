@@ -1,0 +1,51 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # Coolify will map this to its reverse-proxy (Traefik) automatically.
+    # Keep 3000 as the internal port — Coolify handles SSL termination externally.
+    ports:
+      - "3000:3000"
+
+    # Restart the container automatically unless explicitly stopped
+    restart: unless-stopped
+
+    # ── Environment Variables ──────────────────────────────────────
+    # Do NOT commit your real .env file.
+    # In Coolify: set each variable via the "Environment Variables" UI tab.
+    # Locally: create a .env file (see example.env for the required keys).
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      - BASE_URL=${BASE_URL}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PRICING_TABLE_ID=${STRIPE_PRICING_TABLE_ID}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - LITELLM_URL=${LITELLM_URL}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - PAYMENT_LINK_STARTER_ID=${PAYMENT_LINK_STARTER_ID}
+      - PAYMENT_LINK_LITE_ID=${PAYMENT_LINK_LITE_ID}
+      - PAYMENT_LINK_CREATOR_ID=${PAYMENT_LINK_CREATOR_ID}
+      - PAYMENT_LINK_STUDIO_ID=${PAYMENT_LINK_STUDIO_ID}
+      - PAYMENT_LINK_ID=${PAYMENT_LINK_ID}
+
+    # ── Volumes ────────────────────────────────────────────────────
+    # Persist generated plugin zips across container restarts.
+    # Without this, every redeploy would wipe existing download links.
+    volumes:
+      - plugin_downloads:/app/src/public/downloads
+
+    # ── Health check ───────────────────────────────────────────────
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+# Named volume so Coolify can manage it independently of the container
+volumes:
+  plugin_downloads:

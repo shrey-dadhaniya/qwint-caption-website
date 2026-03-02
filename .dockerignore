@@ -1,0 +1,26 @@
+# ── Never include these in the Docker image ─────────────────────
+
+# Secrets
+.env
+.env.*
+
+# Dev dependencies installed locally (the image re-installs via npm ci)
+node_modules/
+
+# Generated plugin zips (runtime-only, managed via Docker volume)
+src/public/downloads/
+
+# Git & IDE metadata
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# Docs & tracking
+ai-tracking/
+README.md
+*.md
+
+# OS
+.DS_Store
+Thumbs.db

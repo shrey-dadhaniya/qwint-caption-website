@@ -1,0 +1,4 @@
+- [x] Extract `paymentLinkId` and use `stripe.paymentLinks.retrieve` to build checkout session line items.
+- [x] Replace `index.ejs` payment link `<a>` tags with `/api/checkout` triggers so `customer_creation: 'always'` accurately executes.
+- [x] Create a logging utility `src/utils/logger.js` that outputs to `ai-tracking/app_debug.log`.
+- [x] Inject `logInfo` and `logError` directly into Stripe webhook logic and checkout handlers for comprehensive debugging.

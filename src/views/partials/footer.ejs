@@ -1,0 +1,75 @@
+<footer role="contentinfo">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-col brand-col">
+                <a href="/" class="footer-logo">
+                    <img src="/assets/images/logo.svg" alt="Qwint Caption Logo" class="footer-logo-img"
+                        style="width: 32px; height: 32px; border-radius: 8px;">
+                    <span>Qwint Caption</span>
+                </a>
+                <p>AI-powered subtitle plugin for Adobe Premiere Pro. Professional captions in seconds.</p>
+                <div class="stripe-badge">
+                    <img src="/assets/icons/lock.svg" alt="" style="width: 13px; height: 13px;">
+                    Payments by Stripe
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/#how-it-works">How It Works</a></li>
+                    <li><a href="/#pricing">Pricing</a></li>
+                    <li><a href="/#demo">Demo</a></li>
+                    <li><a href="/#system-requirements">System Requirements</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="/support">Help Center</a></li>
+                    <li><a href="/#faq">FAQ</a></li>
+                    <li><a href="mailto:support@qwintsoft.com">Contact Us</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/terms">Terms of Service</a></li>
+                    <li><a href="/privacy">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-row">
+                <p class="copyright">© 2025 Qwintsoft LLP. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="/terms">Terms</a>
+                    <a href="/privacy">Privacy</a>
+                    <a href="/support">Support</a>
+                </div>
+            </div>
+            <p class="legal-disclaimer">
+                Qwint Caption is an independent software product developed by Qwintsoft LLP and is not affiliated with
+                or
+                endorsed by Adobe Inc. Adobe Premiere Pro is a registered trademark of Adobe Inc. All other trademarks
+                are the
+                property of their respective owners.
+            </p>
+        </div>
+    </div>
+</footer>
+
+<script src="/assets/js/script.js"></script>
+<div class="toast" id="toast"></div>
+
+<script>
+    function showToast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast show' + (isError ? ' error' : '');
+        setTimeout(() => t.className = 'toast', 3500);
+    }
+</script>

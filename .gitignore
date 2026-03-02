@@ -1,0 +1,38 @@
+# ── Dependencies ───────────────────────────────────────────────
+node_modules/
+
+# ── Environment / Secrets ───────────────────────────────────────
+.env
+.env.*
+!.env.example
+!example.env
+
+# ── Generated plugin zips (contain customer API keys) ──────────
+src/public/downloads/
+
+# ── Logs ───────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Runtime / Build output ──────────────────────────────────────
+dist/
+build/
+.cache/
+
+# ── OS generated ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE / Editor ────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Misc ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/

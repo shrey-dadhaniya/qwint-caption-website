@@ -1,0 +1,2 @@
+### Docker Compose Environment Variables Update
+- Updated `docker-compose.yml` to explicitly include the new Stripe payment link environment variables (`PAYMENT_LINK_STARTER_ID`, `PAYMENT_LINK_LITE_ID`, `PAYMENT_LINK_CREATOR_ID`, `PAYMENT_LINK_STUDIO_ID`, `PAYMENT_LINK_ID`). This ensures these keys are properly passed from the host/Coolify environment down into the Docker container during runtime so the top-up flows function correctly.
