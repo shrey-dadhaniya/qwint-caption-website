@@ -244,6 +244,21 @@
             showToast("Network error. Try again.", true);
           }
         }
+
+        // Auto-lookup if 'key' query parameter is present
+        document.addEventListener('DOMContentLoaded', () => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const keyParam = urlParams.get('key');
+          if (keyParam) {
+            document.getElementById('topup-query').value = keyParam;
+            lookupCustomer();
+
+            // Remove the 'key' from the URL without reloading the page
+            urlParams.delete('key');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, document.title, newUrl);
+          }
+        });
       </script>
 </body>
 
