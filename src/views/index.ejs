@@ -116,14 +116,14 @@
             </p>
 
             <div class="hero-actions">
-              <a href="#demo" class="btn btn-primary btn-xl" id="hero-cta-primary">
-                <img src="assets/icons/play.svg" alt=""
-                  style="width: 18px; height: 18px; filter: brightness(0) invert(1);">
-                Watch 2-Minute Demo
-              </a>
-              <a href="#how-it-works" class="btn btn-outline btn-xl" id="hero-cta-demo">
+              <a href="#pricing" class="btn btn-primary btn-xl" id="hero-cta-primary">
                 Download Free Plugin
-                <img src="assets/icons/download.svg" alt="" style="width: 16px; height: 16px;">
+                <img src="assets/icons/download.svg" alt=""
+                  style="width: 16px; height: 16px; filter: brightness(0) invert(1);">
+              </a>
+              <a href="#demo" class="btn btn-outline btn-xl" id="hero-cta-demo">
+                <img src="assets/icons/play.svg" alt="" style="width: 18px; height: 18px;">
+                Watch 2-Minute Demo
               </a>
             </div>
 
@@ -237,48 +237,24 @@
     <section id="demo" class="section section--alt" aria-labelledby="demo-heading">
       <div class="container">
         <div class="section-header reveal">
-          <span class="badge">🎥 Demo</span>
           <h2 id="demo-heading">From Audio to Subtitles <span class="grad-text">Directly Inside Premiere</span></h2>
-          <p>Generate captions from your audio and place them instantly on your Premiere timeline without exporting or
-            switching tools.</p>
         </div>
         <!-- Demo video placeholder -->
-        <div class="reveal" style="max-width:800px;margin-inline:auto">
-          <div style="
-        aspect-ratio:16/9;
-        background:linear-gradient(135deg,#12121e 0%,#1a1a2e 50%,#12121e 100%);
-        border-radius:var(--radius-lg);
-        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
-        border:1px solid rgba(255,255,255,.08);
-        cursor:pointer;
-        transition:all .3s var(--ease);
-        position:relative;
-        overflow:hidden;
-      " id="demo-trigger" role="button" aria-label="Play demo video" tabindex="0">
-            <div
-              style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(79,70,229,.2) 0%,transparent 60%)">
-            </div>
-            <div style="
-          width:80px;height:80px;
-          background:linear-gradient(135deg,var(--clr-primary),var(--clr-accent));
-          border-radius:50%;
-          display:flex;align-items:center;justify-content:center;
-          font-size:2rem;
-          box-shadow:0 0 40px rgba(79,70,229,.5);
-          position:relative;
-          transition:transform .3s var(--ease-spring);
-        " id="play-btn">
-              <img src="assets/icons/play.svg" alt="Play"
-                style="width: 24px; height: 24px; filter: brightness(0) invert(1);">
-            </div>
-            <p style="color:rgba(255,255,255,.6);font-size:.9rem;position:relative">Watch 2-minute demo</p>
-            <div style="
-          position:absolute;bottom:1.5rem;right:1.5rem;
-          background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
-          border-radius:var(--radius-full);padding:.3rem .8rem;
-          font-size:.72rem;color:rgba(255,255,255,.7);
-        ">2:18</div>
-          </div>
+        <div class="reveal" style="max-width:1080px;margin-inline:auto">
+          <video autoplay loop muted playsinline style="
+              width: 100%;
+              height: auto;
+              aspect-ratio: 16/9;
+              background: #000;
+              border-radius: var(--radius-lg);
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+              display: block;
+              object-fit: cover;
+            " aria-label="Qwint Caption Demo Video">
+            <source src="assets/videos/qwint-caption-demo.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
         </div>
       </div>
     </section>

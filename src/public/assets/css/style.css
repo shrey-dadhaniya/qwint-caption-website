@@ -51,7 +51,7 @@
     --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 
     /* Section spacing */
-    --section-py: clamp(5rem, 10vw, 9rem);
+    --section-py: clamp(3rem, 6vw, 6rem);
     --container: 1200px;
 }
 
