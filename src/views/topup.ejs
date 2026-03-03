@@ -96,6 +96,14 @@
             <h3 style="margin-bottom: 0.5rem; color: var(--clr-text);">Account Found</h3>
             <p style="color: var(--clr-text-2);">AI Credits: <span id="customer-balance"
                 style="font-weight: bold; color: var(--clr-success); font-size: 1.2rem;">0 mins</span></p>
+
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--clr-border);">
+              <p style="color: var(--clr-text-2); font-size: 0.9rem; margin-bottom: 1rem;">Lost your plugin? Redownload the latest version with your key pre-configured.</p>
+              <button class="btn btn-outline" id="download-plugin-btn" onclick="downloadPlugin()" style="font-size: 0.9rem; padding: 0.6rem 1.2rem;">
+                <img src="assets/icons/download.svg" alt="" style="width: 16px; height: 16px; margin-right: 8px;">
+                Download Latest Plugin (.zip)
+              </button>
+            </div>
           </div>
 
           <div class="section-header reveal" style="padding-top: 0; margin-top: 2rem;">
@@ -243,6 +251,42 @@
           } catch (e) {
             showToast("Network error. Try again.", true);
           }
+        }
+
+        async function downloadPlugin() {
+          if (!currentCustomer || !currentCustomer.key) return;
+          
+          const btn = document.getElementById('download-plugin-btn');
+          const originalContent = btn.innerHTML;
+          
+          btn.disabled = true;
+          btn.innerHTML = 'Generating...';
+
+          try {
+            const res = await fetch('/api/generate-plugin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: currentCustomer.key })
+            });
+            const data = await res.json();
+
+            if (data.url) {
+              const link = document.createElement('a');
+              link.href = data.url;
+              link.download = '';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              showToast("Download started", false);
+            } else {
+              showToast(data.error || "Failed to generate plugin", true);
+            }
+          } catch (err) {
+            showToast("Network error. Try again.", true);
+          }
+
+          btn.disabled = false;
+          btn.innerHTML = originalContent;
         }
 
         // Auto-lookup if 'key' query parameter is present

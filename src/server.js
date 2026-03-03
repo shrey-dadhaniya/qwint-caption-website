@@ -296,6 +296,23 @@ app.post('/api/topup-info', express.json(), async (req, res) => {
     }
 });
 
+/**
+ * API: Generate and return a personalized plugin zip
+ */
+app.post('/api/generate-plugin', express.json(), (req, res) => {
+    const { key } = req.body;
+    if (!key) return res.status(400).json({ error: 'Key is required' });
+
+    try {
+        const filename = generatePlugin(key);
+        const url = `/downloads/${filename}`;
+        res.json({ url });
+    } catch (e) {
+        logError('Plugin generation API failed', e);
+        res.status(500).json({ error: 'Failed to generate plugin' });
+    }
+});
+
 
 /**
  * API: Create Topup Checkout Session
