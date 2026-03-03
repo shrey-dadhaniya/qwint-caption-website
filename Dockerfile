@@ -7,8 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install app deps + OpenTelemetry auto-instrumentation & OTLP exporter
-RUN npm ci --omit=dev && \
-    npm install @opentelemetry/auto-instrumentations-node @opentelemetry/exporter-logs-otlp-http
+RUN npm ci --omit=dev
 
 # ── Stage 2: runner ─────────────────────────────────────────────
 FROM node:20-alpine AS runner
@@ -38,4 +37,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget -qO- http://localhost:3000/health || exit 1
 
-CMD ["node", "--import", "@opentelemetry/auto-instrumentations-node/register", "src/server.js"]
+CMD ["node", "-r", "./src/instrumentation.js", "src/server.js"]

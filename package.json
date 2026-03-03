@@ -3,10 +3,15 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node ./src/server.js",
+    "start": "node -r ./src/instrumentation.js ./src/server.js",
     "dev": "nodemon ./src/server.js"
   },
   "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.70.1",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.212.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.212.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
+    "@opentelemetry/sdk-node": "^0.212.0",
     "axios": "^1.6.0",
     "compression": "^1.7.4",
     "dotenv": "^16.3.1",
