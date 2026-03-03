@@ -31,6 +31,11 @@ services:
       - PAYMENT_LINK_CREATOR_ID=${PAYMENT_LINK_CREATOR_ID}
       - PAYMENT_LINK_STUDIO_ID=${PAYMENT_LINK_STUDIO_ID}
       - PAYMENT_LINK_ID=${PAYMENT_LINK_ID}
+      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT}
+      - OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS}
+      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES}
 
     # ── Volumes ────────────────────────────────────────────────────
     # Persist generated plugin zips across container restarts.
@@ -40,7 +45,7 @@ services:
 
     # ── Health check ───────────────────────────────────────────────
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:3000/health" ]
       interval: 30s
       timeout: 5s
       retries: 3
