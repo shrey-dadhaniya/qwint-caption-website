@@ -1,83 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Privacy Policy – Qwint Caption by Qwintsoft LLP</title>
-    <meta name="description"
-        content="Privacy Policy for Qwint Caption. We are committed to protecting your personal data." />
-    <meta name="robots" content="noindex, follow" />
-    <link rel="stylesheet" href="assets/css/style.css" />
-    <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg" />
-    <style>
-        .legal-page {
-            max-width: 780px;
-            margin-inline: auto;
-            padding-block: 8rem 5rem;
-        }
-
-        .legal-page h1 {
-            font-family: var(--font-head);
-            font-size: clamp(1.8rem, 4vw, 2.6rem);
-            font-weight: 800;
-            letter-spacing: -.03em;
-            margin-bottom: .5rem;
-        }
-
-        .legal-date {
-            color: var(--clr-text-3);
-            font-size: .85rem;
-            margin-bottom: 2.5rem;
-        }
-
-        .legal-page h2 {
-            font-size: 1.15rem;
-            font-weight: 700;
-            margin-top: 2.5rem;
-            margin-bottom: .7rem;
-        }
-
-        .legal-page p,
-        .legal-page li {
-            font-size: .92rem;
-            color: var(--clr-text-2);
-            line-height: 1.75;
-            margin-bottom: .6rem;
-        }
-
-        .legal-page ul {
-            padding-left: 1.4rem;
-        }
-
-        .legal-page ul li {
-            list-style: disc;
-        }
-
-        .legal-back {
-            display: inline-flex;
-            align-items: center;
-            gap: .4rem;
-            font-size: .85rem;
-            font-weight: 600;
-            color: var(--clr-primary);
-            margin-bottom: 2rem;
-            transition: gap .2s;
-        }
-
-        .legal-back:hover {
-            gap: .7rem;
-        }
-    </style>
-    <%- include('partials/meta-pixel') %>
-</head>
+<%- include('partials/landing/head', {
+    pageTitle: 'Privacy Policy – Qwint Caption by Qwintsoft LLP',
+    pageDescription: 'Privacy Policy for Qwint Caption. We are committed to protecting your personal data.',
+    robots: 'noindex, follow',
+    extraCssPath: '/assets/css/landing-pages.css'
+}) %>
 
 <body>
-    <%- include('partials/navbar') %>
+    <%- include('partials/landing/navbar') %>
 
-        <main>
-            <div class="container">
-                <div class="legal-page">
+        <main class="subpage-main">
+            <div class="subpage-wrap">
+                <article class="subpage-card legal-page">
                     <a href="/" class="legal-back">← Back to Home</a>
                     <h1>Privacy Policy</h1>
                     <p class="legal-date">Last updated: February 19, 2025 &nbsp;·&nbsp; Effective: February 19, 2025</p>
@@ -87,7 +23,7 @@
                         when you use Qwint Caption ("the Software") and our website.</p>
 
                     <h2>1. Information We Collect</h2>
-                    <p><strong>Account and Purchase Information:</strong> When you purchase Qwint Caption, Stripe
+                    <p><strong>Account and Purchase Information:</strong> When you purchase Qwint Caption, Razorpay
                         collects
                         your name, email address, and payment information on our behalf. We receive a transaction record
                         that includes your email and purchase details we never see your full card number.</p>
@@ -123,7 +59,7 @@
                         share
                         data only with:</p>
                     <ul>
-                        <li><strong>Stripe:</strong> For secure payment processing (governed by Stripe's Privacy Policy)
+                        <li><strong>Razorpay:</strong> For secure payment processing (governed by Razorpay's Privacy Policy)
                         </li>
                         <li><strong>OpenAI / Whisper AI:</strong> Audio is sent for transcription, not retained
                             post-processing</li>
@@ -143,7 +79,7 @@
                     <p>We implement industry-standard security measures including TLS encryption for data in transit,
                         hashed
                         machine identifiers, and access controls on our databases. Payment data is handled entirely by
-                        Stripe's PCI DSS Level 1 certified infrastructure.</p>
+                        Razorpay's PCI DSS compliant infrastructure.</p>
 
                     <h2>6. Cookies</h2>
                     <p>Our website uses minimal cookies necessary for functionality (e.g., session management). We do
@@ -184,11 +120,12 @@
                         Email: <a href="mailto:privacy@qwintsoft.com"
                             style="color:var(--clr-primary)">privacy@qwintsoft.com</a>
                     </p>
-                </div>
+                </article>
             </div>
         </main>
 
-        <%- include('partials/footer') %>
+        <%- include('partials/landing/footer') %>
+        <script src="/assets/js/landing.js"></script>
 </body>
 
 </html>

@@ -1,75 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-
-  <title>Top-up - Qwint Caption</title>
-  <meta name="robots" content="noindex, nofollow" />
-
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg" />
-  <style>
-    /* Topup Form Specifics */
-    #topup-section {
-      padding-top: 150px;
-      padding-bottom: 100px;
-      min-height: 80vh;
-    }
-
-    .topup-lookup {
-      max-width: 500px;
-      margin: 0 auto;
-      background: var(--clr-bg-alt);
-      padding: 40px;
-      border-radius: 16px;
-      border: 1px solid var(--clr-border);
-      text-align: center;
-    }
-
-    .topup-lookup input {
-      width: 100%;
-      padding: 14px 18px;
-      background: var(--clr-bg);
-      border: 1px solid var(--clr-border);
-      border-radius: 8px;
-      color: var(--clr-text);
-      font-size: 1rem;
-      font-family: inherit;
-      outline: none;
-      margin-bottom: 15px;
-      transition: border-color 0.15s;
-    }
-
-    .topup-lookup input:focus {
-      border-color: var(--clr-primary);
-    }
-
-    .topup-lookup .btn {
-      width: 100%;
-      justify-content: center;
-    }
-
-    #customer-info {
-      text-align: center;
-      margin-bottom: 30px;
-      padding: 20px;
-      background: var(--clr-bg-alt);
-      border-radius: 10px;
-      border: 1px solid var(--clr-primary);
-      max-width: 800px;
-      margin-inline: auto;
-    }
-  </style>
-  <%- include('partials/meta-pixel') %>
-</head>
+<%- include('partials/landing/head', {
+    pageTitle: 'Top-up - Qwint Caption',
+    pageDescription: 'Top up your Qwint Caption credits and continue generating captions.',
+    robots: 'noindex, nofollow',
+    extraCssPath: '/assets/css/landing-pages.css'
+}) %>
 
 <body>
 
   <!-- ── Navigation ──────────────────────────────────────────── -->
-  <%- include('partials/navbar') %>
+  <%- include('partials/landing/navbar') %>
 
     <!-- ── Main Topup Content ──────────────────────────────────── -->
     <section id="topup-section" aria-labelledby="topup-heading">
@@ -100,7 +42,7 @@
             <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--clr-border);">
               <p style="color: var(--clr-text-2); font-size: 0.9rem; margin-bottom: 1rem;">Lost your plugin? Redownload the latest version with your key pre-configured.</p>
               <button class="btn btn-outline" id="download-plugin-btn" onclick="downloadPlugin()" style="font-size: 0.9rem; padding: 0.6rem 1.2rem;">
-                <img src="assets/icons/download.svg" alt="" style="width: 16px; height: 16px; margin-right: 8px;">
+                <img src="/assets/icons/download.svg" alt="" style="width: 16px; height: 16px; margin-right: 8px;">
                 Download Latest Plugin (.zip)
               </button>
             </div>
@@ -110,37 +52,43 @@
             <h2 style="font-size: 2rem;">Choose Top-up Pack</h2>
           </div>
 
+          <%
+            const starterPack = products.find((p) => p.id === 'starter') || products[0];
+            const otherPacks = products.filter((p) => p.id !== starterPack.id);
+          %>
+
           <div class="pricing-wrapper">
             <div class="reveal">
               <!-- Main attraction: Starter Pack -->
               <div class="pricing-main" style="margin-bottom: 2rem;">
                 <div class="pricing-info">
-                  <span class="pricing-badge">BEST ENTRY</span>
+                  <span class="pricing-badge"><%= starterPack.tagline || 'BEST ENTRY' %></span>
                   <div class="price-tag" style="margin-top:.8rem">
                     <span class="price-currency">₹</span>
-                    <span class="price-amount">249</span>
-                    <span class="price-period">&nbsp;+ Tax</span>
+                    <span class="price-amount"><%= starterPack.amount_inr %></span>
+                    <span class="price-period">&nbsp;<%= starterPack.tax_note || '+ Tax' %></span>
                   </div>
-                  <h3>Starter Pack</h3>
-                  <p>The perfect way to get started. Credits never expire.</p>
+                  <h3><%= starterPack.name %></h3>
+                  <p><%= starterPack.description %></p>
                   <div class="price-includes">
-                    <div class="pi-item"><span class="check">✓</span> 60 Minutes Credits</div>
-                    <div class="pi-item"><span class="check">✓</span> Credits never expire</div>
+                    <% (starterPack.includes || []).forEach(function(item) { %>
+                      <div class="pi-item"><span class="check">✓</span> <%= item %></div>
+                    <% }); %>
                   </div>
                 </div>
 
                 <div class="pricing-cta-area">
                   <div style="text-align:center">
-                    <button onclick="handleTopupBtn('<%= paymentLinkIdStarter %>')" class="btn btn-primary btn-xl"
+                    <button onclick="handleTopupBtn('<%= starterPack.id %>')" class="btn btn-primary btn-xl"
                       style="width:100%; border:none; cursor:pointer;" id="topup-starter-btn">
-                      <img src="assets/icons/cart.svg" alt=""
+                      <img src="/assets/icons/cart.svg" alt=""
                         style="width: 18px; height: 18px; filter: brightness(0) invert(1);">
-                      Top-up ₹ 249
+                      Top-up ₹ <%= starterPack.amount_inr %>
                     </button>
                   </div>
                   <div class="stripe-badge" style="margin-top:1rem;">
-                    <img src="assets/icons/lock.svg" alt="" style="width: 14px; height: 14px;">
-                    Secured by Stripe
+                    <img src="/assets/icons/lock.svg" alt="" style="width: 14px; height: 14px;">
+                    Secured by Razorpay
                   </div>
                 </div>
               </div>
@@ -148,31 +96,21 @@
               <!-- Smaller Packs -->
               <div class="topup-grid"
                 style="margin-bottom: 2rem; max-width: 900px; margin-left: auto; margin-right: auto;">
-                <div class="topup-card">
-                  <h4>Lite Pack</h4>
-                  <div class="topup-price">₹ 169 <span style="font-size: 0.8rem; opacity: 0.7;">+ Tax</span></div>
-                  <p>30 minutes total</p>
-                  <button onclick="handleTopupBtn('<%= paymentLinkIdLite %>')" class="btn btn-primary"
-                    style="margin-top: 1rem; width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.6rem; border-radius: var(--radius-md); border:none; cursor:pointer;"
-                    id="topup-lite-btn">Top-up Pack</button>
-                </div>
-                <div class="topup-card" style="border-color: var(--clr-primary); background: var(--clr-primary-lt);">
-                  <div class="topup-popular-badge">MOST POPULAR</div>
-                  <h4>Creator Pack</h4>
-                  <div class="topup-price">₹ 399 <span style="font-size: 0.8rem; opacity: 0.7;">+ Tax</span></div>
-                  <p>180 mins total (165 + 15 Bonus)</p>
-                  <button onclick="handleTopupBtn('<%= paymentLinkIdCreator %>')" class="btn btn-primary"
-                    style="margin-top: 1rem; width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.6rem; border-radius: var(--radius-md); border:none; cursor:pointer;"
-                    id="topup-creator-btn">Top-up Pack</button>
-                </div>
-                <div class="topup-card">
-                  <h4>Studio Pack</h4>
-                  <div class="topup-price">₹ 499 <span style="font-size: 0.8rem; opacity: 0.7;">+ Tax</span></div>
-                  <p>360 mins total (330 + 30 Bonus)</p>
-                  <button onclick="handleTopupBtn('<%= paymentLinkIdStudio %>')" class="btn btn-primary"
-                    style="margin-top: 1rem; width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.6rem; border-radius: var(--radius-md); border:none; cursor:pointer;"
-                    id="topup-studio-btn">Top-up Pack</button>
-                </div>
+                <% otherPacks.forEach(function(pack) { %>
+                  <div class="topup-card"
+                    style="<%= pack.tagline === 'MOST POPULAR' ? 'border-color: var(--clr-primary); background: var(--clr-primary-lt);' : '' %>">
+                    <% if (pack.tagline === 'MOST POPULAR') { %>
+                      <div class="topup-popular-badge"><%= pack.tagline %></div>
+                    <% } %>
+                    <h4><%= pack.name %></h4>
+                    <div class="topup-price">₹ <%= pack.amount_inr %> <span
+                        style="font-size: 0.8rem; opacity: 0.7;"><%= pack.tax_note || '+ Tax' %></span></div>
+                    <p><%= pack.description %></p>
+                    <button onclick="handleTopupBtn('<%= pack.id %>')" class="btn btn-primary"
+                      style="margin-top: 1rem; width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.6rem; border-radius: var(--radius-md); border:none; cursor:pointer;"
+                      id="topup-<%= pack.id %>-btn">Top-up Pack</button>
+                  </div>
+                <% }); %>
               </div>
             </div>
           </div>
@@ -182,10 +120,13 @@
     </section>
 
     <!-- ── Footer ───────────────────────────────────────────────── -->
-    <%- include('partials/footer') %>
+    <%- include('partials/landing/footer') %>
 
+      <script src="/assets/js/landing.js"></script>
+      <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       <script>
         let currentCustomer = null;
+        const fallbackRazorpayKeyId = "<%= razorpayKeyId %>";
 
         async function lookupCustomer() {
           const query = document.getElementById('topup-query').value.trim();
@@ -211,7 +152,7 @@
               showToast(data.error, true);
             } else {
               currentCustomer = data;
-              document.getElementById('customer-balance').innerText = data.available_budget + ' seconds';
+              document.getElementById('customer-balance').innerText = data.available_budget + ' credits';
               document.getElementById('lookup-section').style.display = 'none';
               document.getElementById('topup-plans').style.display = 'block';
             }
@@ -223,31 +164,99 @@
           btn.textContent = 'Find Account';
         }
 
-        async function handleTopupBtn(paymentLinkId) {
-          if (!currentCustomer || !currentCustomer.stripeId) return;
-          if (!paymentLinkId || paymentLinkId === '#') {
-            showToast("Payment link not configured.", true);
+        async function verifyAndRedirect(razorpayResponse) {
+          showToast("Verifying payment...", false);
+          const verifyRes = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(razorpayResponse)
+          });
+          const verifyData = await verifyRes.json();
+
+          if (!verifyRes.ok || !verifyData.ok || !verifyData.redirectUrl) {
+            throw new Error(verifyData.error || 'Could not verify payment');
+          }
+
+          window.location.href = verifyData.redirectUrl;
+        }
+
+        function openRazorpayCheckout(data) {
+          const checkout = data.checkout || {};
+          const product = data.product || {};
+          const keyId = data.razorpayKeyId || fallbackRazorpayKeyId;
+
+          if (!keyId) {
+            showToast("Razorpay key is not configured.", true);
+            return;
+          }
+          if (typeof Razorpay === 'undefined') {
+            showToast("Payment checkout failed to load. Refresh and retry.", true);
             return;
           }
 
-          showToast("Preparing checkout...", false);
+          const options = {
+            key: keyId,
+            amount: data.order.amount,
+            currency: data.order.currency,
+            name: checkout.name || 'Qwint Caption',
+            description: product.name || checkout.description || 'Top-up Credits',
+            order_id: data.order.id,
+            prefill: currentCustomer && currentCustomer.phone ? { contact: currentCustomer.phone } : undefined,
+            notes: { product_id: product.id || '' },
+            theme: { color: checkout.theme_color || '#4f46e5' },
+            handler: async function (response) {
+              try {
+                await verifyAndRedirect(response);
+              } catch (err) {
+                showToast(err.message || "Payment verification failed.", true);
+              }
+            },
+            modal: {
+              ondismiss: function () {
+                showToast("Payment was cancelled.", true);
+              }
+            }
+          };
+
+          const rzp = new Razorpay(options);
+          rzp.on('payment.failed', function (event) {
+            const reason = event && event.error && event.error.description
+              ? event.error.description
+              : "Payment failed. Please try again.";
+            showToast(reason, true);
+          });
+          rzp.open();
+        }
+
+        async function handleTopupBtn(productId) {
+          if (!currentCustomer || !currentCustomer.key) {
+            showToast("Find your account before checkout.", true);
+            return;
+          }
+          if (!productId) {
+            showToast("Product is not configured.", true);
+            return;
+          }
+
+          showToast("Opening secure checkout...", false);
 
           try {
             const checkoutReq = await fetch('/api/checkout-topup', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                paymentLinkId: paymentLinkId,
-                customerId: currentCustomer.stripeId
+                productId: productId,
+                key: currentCustomer.key
               })
             });
 
             const checkoutData = await checkoutReq.json();
-            if (checkoutData.url) {
-              window.location.href = checkoutData.url;
-            } else {
+            if (!checkoutReq.ok || checkoutData.error || !checkoutData.order) {
               showToast("Could not initiate checkout: " + (checkoutData.error || "Unknown"), true);
+              return;
             }
+
+            openRazorpayCheckout(checkoutData);
           } catch (e) {
             showToast("Network error. Try again.", true);
           }

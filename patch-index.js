@@ -40,16 +40,16 @@ newHtml = newHtml.replace(/terms\.html/g, '/terms');
 /*
         <div class="nav-cta">
           <a href="#pricing" class="btn btn-outline" id="nav-pricing-btn">View Pricing</a>
-          <a href="#stripe-checkout" class="btn btn-primary" id="nav-download-btn">Get Qwint Caption →</a>
+          <a href="#razorpay-checkout" class="btn btn-primary" id="nav-download-btn">Get Qwint Caption →</a>
         </div>
 */
 newHtml = newHtml.replace(
-    '<a href="#stripe-checkout" class="btn btn-primary" id="nav-download-btn">Get Qwint Caption →</a>',
+    '<a href="#razorpay-checkout" class="btn btn-primary" id="nav-download-btn">Get Qwint Caption →</a>',
     '<a href="#" onclick="openLogin(event)" class="btn btn-primary" id="nav-login-btn">🔑 Login</a>'
 );
 // Also for mobile nav:
 newHtml = newHtml.replace(
-    '<a href="#stripe-checkout" class="btn btn-primary btn-lg">Get Qwint Caption →</a>',
+    '<a href="#razorpay-checkout" class="btn btn-primary btn-lg">Get Qwint Caption →</a>',
     '<a href="#" onclick="openLogin(event)" class="btn btn-primary btn-lg">🔑 Login</a>'
 );
 // Make sure openLogin doesn't follow href

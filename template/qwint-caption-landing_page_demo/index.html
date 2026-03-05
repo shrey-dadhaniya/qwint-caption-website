@@ -1,11 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<%- include('partials/landing/head') %>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qwint Caption — AI Caption Generator for Adobe Premiere Pro</title>
+    <meta name="description"
+        content="Qwint Caption is an AI-powered plugin for Adobe Premiere Pro that automatically generates accurate captions and subtitles. Save hours of manual editing. Try free." />
+    <meta name="keywords"
+        content="Premiere Pro captions, AI subtitles, auto caption generator, Premiere Pro plugin, video captions, subtitle generator" />
+    <meta name="author" content="Qwint Soft LLP" />
+    <meta property="og:title" content="Qwint Caption — AI Caption Generator for Adobe Premiere Pro" />
+    <meta property="og:description"
+        content="Generate accurate captions automatically inside Adobe Premiere Pro. Save hours of manual editing." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://qwintcaption.com/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Qwint Caption — AI Caption Generator for Adobe Premiere Pro" />
+    <meta name="twitter:description"
+        content="AI-powered Premiere Pro plugin that auto-generates captions in seconds." />
+    <link rel="canonical" href="https://qwintcaption.com/" />
+
+    <!-- Google Fonts — display=swap avoids render-blocking -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Space+Grotesk:wght@600;700;800&display=swap"
+        rel="stylesheet" />
+    <!-- Preload critical font subset -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap" />
+
+    <!-- Razorpay — deferred to not block initial render -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+
+    <!-- Google Analytics GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <!-- Facebook Pixel -->
+    <script>
+        !function (f, b, e, v, n, t, s) {
+            if (f.fbq) return; n = f.fbq = function () {
+                n.callMethod ?
+                n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+            };
+            if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+            n.queue = []; t = b.createElement(e); t.async = !0;
+            t.src = v; s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s)
+        }(window, document, 'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', 'XXXXXXXXXXXXXXXXX');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id=XXXXXXXXXXXXXXXXX&ev=PageView&noscript=1" />
+    </noscript>
+
+    <link rel="stylesheet" href="style.css" />
+</head>
 
 <body>
 
-    <%- include('partials/landing/navbar') %>
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-inner">
+            <a href="#" class="logo">
+                <span class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect width="28" height="28" rx="7" fill="url(#logoGrad)" />
+                        <path d="M7 10h14M7 14h10M7 18h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" />
+                        <defs>
+                            <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#6A00FF" />
+                                <stop offset="1" stop-color="#A259FF" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span>Qwint <strong>Caption</strong></span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+            <a href="#download" class="btn btn-primary btn-sm" id="nav-cta">Download Free</a>
+            <button class="hamburger" id="hamburger" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+        <div class="mobile-menu" id="mobile-menu">
+            <a href="#how-it-works">How It Works</a>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+            <a href="#download" class="btn btn-primary" id="mobile-nav-cta">Download Free</a>
+        </div>
+    </nav>
 
     <!-- ===== HERO ===== -->
     <section class="hero" id="hero">
@@ -25,7 +124,7 @@
                 Save hours of manual editing — no account needed to get started.
             </p>
             <div class="hero-cta-group">
-                <a href="#download" class="btn btn-primary btn-hero" id="hero-download-btn"
+                <a href="#instant-download" class="btn btn-primary btn-hero" id="hero-download-btn"
                     onclick="trackDownload()">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path d="M10 3v10M6 9l4 4 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round"
@@ -310,6 +409,121 @@
         </div>
     </section>
 
+    <!-- ===== FEATURES ===== -->
+    <section class="section features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Why Qwint</span>
+                <h2>Everything You Need for Caption Excellence</h2>
+                <p>Powerful AI. Seamless Premiere Pro integration. Zero friction.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card feature-card-large">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M4 16C4 9.37 9.37 4 16 4s12 5.37 12 12-5.37 12-12 12S4 22.63 4 16z"
+                                stroke="url(#fi1)" stroke-width="2" />
+                            <path d="M10 16h12M16 10v12" stroke="url(#fi1)" stroke-width="2" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi1" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Automatic AI Caption Generation</h3>
+                    <p>State-of-the-art speech recognition AI transcribes audio with 98%+ accuracy. No more manual
+                        typing, ever.</p>
+                    <div class="feature-tag">Core Feature</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect x="4" y="6" width="24" height="18" rx="3" stroke="url(#fi2)" stroke-width="2" />
+                            <path d="M4 12h24" stroke="url(#fi2)" stroke-width="1.5" />
+                            <path d="M10 18h12" stroke="url(#fi2)" stroke-width="2" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi2" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Works Inside Premiere Pro</h3>
+                    <p>No switching apps. Native plugin experience in your existing workflow.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="11" stroke="url(#fi3)" stroke-width="2" />
+                            <path d="M16 8v8l5 3" stroke="url(#fi3)" stroke-width="2" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi3" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Multi-language Support</h3>
+                    <p>Generate captions in 50+ languages. Translate automatically for global reach.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect x="8" y="4" width="16" height="22" rx="3" stroke="url(#fi4)" stroke-width="2" />
+                            <path d="M12 14h8M12 18h6" stroke="url(#fi4)" stroke-width="1.5" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi4" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Perfect for Reels, YouTube &amp; Shorts</h3>
+                    <p>Caption styles pre-optimized for every platform's format and aspect ratio.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M28 16l-4-8H8l-4 8 4 8h16l4-8z" stroke="url(#fi5)" stroke-width="2"
+                                stroke-linejoin="round" />
+                            <path d="M16 12v8M12 16h8" stroke="url(#fi5)" stroke-width="1.5" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi5" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Fast Social Media Export</h3>
+                    <p>Export caption files (SRT, VTT) or baked-in captions in one click.</p>
+                </div>
+                <div class="feature-card feature-card-highlight">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M16 4l3 8h8l-6.5 4.7 2.5 8.3L16 20l-7 5 2.5-8.3L5 12h8l3-8z" stroke="url(#fi6)"
+                                stroke-width="2" stroke-linejoin="round" />
+                            <defs>
+                                <linearGradient id="fi6" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Saves Hours of Editing</h3>
+                    <p>What took 3+ hours now takes 30 seconds. 10x your productivity.</p>
+                    <div class="feature-stat">10x faster</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ===== FREE TRIAL ===== -->
     <section class="section free-trial" id="free-trial">
         <div class="container">
@@ -364,38 +578,65 @@
             <div class="section-header">
                 <span class="section-tag">Flexible Pricing</span>
                 <h2>Pay Only for What You Use</h2>
-                <p>Simple one-time packs. No subscriptions, no hidden fees.</p>
+                <p>Simple credit system. No subscriptions, no commitments. Top-up anytime.</p>
             </div>
-            <% const pricingPackages = Array.isArray(products) ? products : []; %>
             <div class="pricing-grid">
-                <% pricingPackages.forEach(function(pack, index) { %>
-                    <% const isPopular = String(pack.tagline || '').toUpperCase().includes('POPULAR'); %>
-                    <div class="pricing-card <%= isPopular ? 'pricing-card-popular' : '' %>">
-                        <% if (isPopular) { %>
-                            <div class="plan-popular-badge"><%= pack.tagline %></div>
-                        <% } %>
-                        <div class="plan-name"><%= pack.name %></div>
-                        <div class="plan-price">₹<%= pack.amount_inr %></div>
-                        <div class="plan-credits"><%= pack.credits_minutes %> minutes of captions</div>
-                        <ul class="plan-features">
-                            <% (pack.includes || []).forEach(function(benefit) { %>
-                                <li>✓ <%= benefit %></li>
-                            <% }); %>
-                        </ul>
-                        <button class="btn <%= isPopular ? 'btn-primary' : 'btn-outline' %> btn-full"
-                            onclick="handlePackageCheckout('<%= pack.id %>')"
-                            id="buy-<%= pack.id %>">
-                            Buy <%= pack.name %>
-                        </button>
-                    </div>
-                <% }); %>
+                <div class="pricing-card">
+                    <div class="plan-name">Starter</div>
+                    <div class="plan-price">₹199</div>
+                    <div class="plan-credits">30 minutes of captions</div>
+                    <ul class="plan-features">
+                        <li>✓ 30 min caption generation</li>
+                        <li>✓ All languages supported</li>
+                        <li>✓ SRT / VTT export</li>
+                        <li>✓ Reels-optimized styles</li>
+                    </ul>
+                    <button class="btn btn-outline btn-full" onclick="handlePayment(199, 30, 'Starter')"
+                        id="buy-starter">
+                        Buy Starter Credits
+                    </button>
+                </div>
+                <div class="pricing-card pricing-card-popular">
+                    <div class="plan-popular-badge">Most Popular</div>
+                    <div class="plan-name">Creator</div>
+                    <div class="plan-price">₹499</div>
+                    <div class="plan-credits">120 minutes of captions</div>
+                    <ul class="plan-features">
+                        <li>✓ 120 min caption generation</li>
+                        <li>✓ All languages supported</li>
+                        <li>✓ SRT / VTT export</li>
+                        <li>✓ Priority AI processing</li>
+                        <li>✓ Caption style customization</li>
+                    </ul>
+                    <button class="btn btn-primary btn-full" onclick="handlePayment(499, 120, 'Creator')"
+                        id="buy-creator">
+                        Buy Creator Credits
+                    </button>
+                </div>
+                <div class="pricing-card">
+                    <div class="plan-name">Agency</div>
+                    <div class="plan-price">₹999</div>
+                    <div class="plan-credits">300 minutes of captions</div>
+                    <ul class="plan-features">
+                        <li>✓ 300 min caption generation</li>
+                        <li>✓ All languages supported</li>
+                        <li>✓ SRT / VTT export</li>
+                        <li>✓ Priority AI processing</li>
+                        <li>✓ Caption style customization</li>
+                        <li>✓ Bulk export tools</li>
+                    </ul>
+                    <button class="btn btn-outline btn-full" onclick="handlePayment(999, 300, 'Agency')"
+                        id="buy-agency">
+                        Buy Agency Credits
+                    </button>
+                </div>
             </div>
             <div class="pricing-note">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3v4M8 11v.5" stroke="#A259FF" stroke-width="1.5"
                         stroke-linecap="round" />
                 </svg>
-                Secure checkout powered by Razorpay. Credits never expire.
+                Credits never expire. Use them at your own pace. Secure payment via Razorpay.
             </div>
         </div>
     </section>
@@ -557,8 +798,9 @@
                     </div>
                     <div class="faq-answer">
                         <p>Credits are measured in minutes of video processed. For example, generating captions for a
-                            5-minute video uses 5 minutes of credits. You get 1 minute free on signup. Top-up checkout
-                            is being finalized, and credits will continue to be non-expiring.</p>
+                            5-minute video uses 5 minutes of credits. You get 1 minute free on signup. After that, you
+                            can purchase credit packs starting at ₹199. Credits never expire, so you can use them at
+                            your own pace.</p>
                     </div>
                 </div>
                 <div class="faq-item" onclick="toggleFaq(this)">
@@ -613,11 +855,71 @@
         </div>
     </section>
 
-    <%- include('partials/landing/footer') %>
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="#" class="logo footer-logo">
+                        <span class="logo-icon">
+                            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                                <rect width="28" height="28" rx="7" fill="url(#fLogo)" />
+                                <path d="M7 10h14M7 14h10M7 18h7" stroke="#fff" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <defs>
+                                    <linearGradient id="fLogo" x1="0" y1="0" x2="28" y2="28">
+                                        <stop stop-color="#6A00FF" />
+                                        <stop offset="1" stop-color="#A259FF" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </span>
+                        <span>Qwint <strong>Caption</strong></span>
+                    </a>
+                    <p class="footer-tagline">AI Caption Generator for Adobe Premiere Pro</p>
+                    <p class="footer-company">A product of <strong>Qwint Soft LLP</strong></p>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#how-it-works">How It Works</a></li>
+                        <li><a href="#download">Download Plugin</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About Qwint Soft</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="mailto:support@qwintsoft.com">support@qwintsoft.com</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 Qwint Soft LLP. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="mailto:support@qwintsoft.com">Contact Support</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <!-- ===== STICKY MOBILE CTA ===== -->
     <div class="sticky-cta" id="stickyCta">
-        <a href="#download" class="btn btn-primary btn-full sticky-cta-btn" id="sticky-download-btn"
+        <a href="#instant-download" class="btn btn-primary btn-full sticky-cta-btn" id="sticky-download-btn"
             onclick="trackDownload()">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                 <path d="M10 3v10M6 9l4 4 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round"
@@ -629,8 +931,17 @@
         <p class="sticky-cta-note">No signup · 1 free minute</p>
     </div>
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="/assets/js/landing.js"></script>
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-icon">✅</div>
+            <h3>Payment Successful!</h3>
+            <p id="modalMessage">Your credits have been added to your account.</p>
+            <button class="btn btn-primary" onclick="closeModal()">Continue</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 
 </html>

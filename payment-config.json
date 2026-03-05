@@ -1,0 +1,124 @@
+{
+  "payment_gateway": {
+    "provider": "razorpay",
+    "currency": "INR",
+    "display_name": "Qwint Caption",
+    "description": "AI Caption Credit Packs",
+    "theme_color": "#6A00FF",
+    "credentials": {
+      "key_id_env": "RAZORPAY_KEY_ID",
+      "key_secret_env": "RAZORPAY_KEY_SECRET"
+    }
+  },
+  "litellm_key_details": {
+    "base_url_env": "LITELLM_URL",
+    "master_key_env": "LITELLM_MASTER_KEY",
+    "metadata_customer_id_field": "razorpay_customer_id",
+    "free_download": {
+      "team_id": "qwint-caption",
+      "models": ["gemini/gemini-2.5-flash"],
+      "key_type": "llm_api",
+      "key_budget": 10,
+      "metadata_available_budget": 60,
+      "metadata": {
+        "source": "qwint-caption-website",
+        "flow_type": "free_download",
+        "plan_code": "FREE"
+      }
+    }
+  },
+  "free_download": {
+    "team_id": "qwint-caption",
+    "models": ["gemini/gemini-2.5-flash"],
+    "key_type": "llm_api",
+    "key_budget": 10,
+    "metadata_available_budget": 60,
+    "metadata_customer_id_field": "razorpay_customer_id",
+    "metadata": {
+      "source": "qwint-caption-website",
+      "flow_type": "free_download",
+      "plan_code": "FREE"
+    }
+  },
+  "products": [
+    {
+      "id": "a",
+      "name": "Package A",
+      "tagline": "STARTER",
+      "description": "Ideal for trying out caption generation on short projects.",
+      "amount_inr": 199,
+      "tax_note": "+ Tax",
+      "credits_minutes": 60,
+      "benefits": [
+        "60 caption minutes",
+        "Fast AI processing",
+        "Credits do not expire"
+      ],
+      "litellm": {
+        "team_id": "qwint-caption",
+        "key_type": "llm_api",
+        "models": ["gemini/gemini-2.5-flash"],
+        "key_budget": 10,
+        "metadata_available_budget": 3600,
+        "metadata": {
+          "plan_code": "A",
+          "plan_name": "Package A"
+        }
+      }
+    },
+    {
+      "id": "b",
+      "name": "Package B",
+      "tagline": "MOST POPULAR",
+      "description": "Balanced pack for active creators with recurring caption needs.",
+      "amount_inr": 499,
+      "tax_note": "+ Tax",
+      "credits_minutes": 180,
+      "benefits": [
+        "180 caption minutes",
+        "Priority queue processing",
+        "Credits do not expire"
+      ],
+      "litellm": {
+        "team_id": "qwint-caption",
+        "key_type": "llm_api",
+        "models": ["gemini/gemini-2.5-flash"],
+        "key_budget": 30,
+        "metadata_available_budget": 10800,
+        "metadata": {
+          "plan_code": "B",
+          "plan_name": "Package B"
+        }
+      }
+    },
+    {
+      "id": "c",
+      "name": "Package C",
+      "tagline": "PRO",
+      "description": "High-volume pack for studios and teams managing large projects.",
+      "amount_inr": 999,
+      "tax_note": "+ Tax",
+      "credits_minutes": 420,
+      "benefits": [
+        "420 caption minutes",
+        "Highest processing priority",
+        "Credits do not expire"
+      ],
+      "litellm": {
+        "team_id": "qwint-caption",
+        "key_type": "llm_api",
+        "models": ["gemini/gemini-2.5-flash"],
+        "key_budget": 50,
+        "metadata_available_budget": 25200,
+        "metadata": {
+          "plan_code": "C",
+          "plan_name": "Package C"
+        }
+      }
+    }
+  ],
+  "plugin": {
+    "template_zip_path": "src/private/plugin.zip",
+    "key_placeholder": "PROD_CUSTOMER_API_KEY"
+  }
+}

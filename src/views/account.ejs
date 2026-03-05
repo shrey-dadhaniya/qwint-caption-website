@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/landing/head', {
+    pageTitle: 'Account - Qwint Caption',
+    pageDescription: 'Manage your Qwint Caption credits, download plugin zip, and top up your LiteLLM key.',
+    robots: 'noindex, nofollow',
+    extraCssPath: '/assets/css/landing-pages.css',
+    extraCssPaths: ['/assets/css/account.css']
+}) %>
+
+<body>
+    <%- include('partials/landing/navbar') %>
+
+    <main class="account-main">
+        <div class="container account-wrap">
+            <section class="card account-lookup" id="account-lookup-section" aria-labelledby="account-lookup-title">
+                <h2 id="account-lookup-title">Find Your Key</h2>
+                <p>Paste your LiteLLM key below.</p>
+                <div class="account-lookup-row">
+                    <input type="text" id="account-key-input" class="email-input" placeholder="sk-..." autocomplete="off"
+                        spellcheck="false" onkeydown="if(event.key==='Enter'){lookupAccountKey();}">
+                    <button class="btn btn-primary account-load-btn" id="account-key-submit" onclick="lookupAccountKey()">Load Account</button>
+                </div>
+            </section>
+
+            <section class="card account-details" id="account-details" style="display:none;" aria-live="polite">
+                <div class="account-details-head">
+                    <div>
+                        <p class="account-label">Available Budget</p>
+                        <div class="account-budget">
+                            <span id="account-available-budget">0</span>
+                            <span class="account-budget-unit">secounds</span>
+                        </div>
+                    </div>
+                    <div class="account-credit-loading" id="account-credit-loading" style="display:none;">
+                        <span class="spinner"></span>
+                        <span>Updating credits...</span>
+                    </div>
+                </div>
+
+                <div class="account-meta-grid">
+                    <div class="account-meta-item">
+                        <span class="account-meta-label">LiteLLM Key</span>
+                        <span class="account-meta-value mono" id="account-meta-key">-</span>
+                    </div>
+                    <div class="account-meta-item">
+                        <span class="account-meta-label">Customer ID</span>
+                        <span class="account-meta-value mono" id="account-meta-customer">-</span>
+                    </div>
+                    <div class="account-meta-item">
+                        <span class="account-meta-label">Phone</span>
+                        <span class="account-meta-value" id="account-meta-phone">-</span>
+                    </div>
+                </div>
+
+                <div class="account-actions">
+                    <button class="btn btn-outline account-download-btn" id="account-download-btn" onclick="downloadAccountZip()">
+                        Download Zip
+                    </button>
+                </div>
+            </section>
+
+            <section class="card account-topup" id="account-topup" style="display:none;" aria-labelledby="account-topup-title">
+                <div class="section-header account-pricing-header">
+                    <span class="section-tag">Flexible Pricing</span>
+                    <h2 id="account-topup-title">Top Up Credits</h2>
+                    <p>Choose a package to add more credits to this same key.</p>
+                </div>
+
+                <div class="pricing-grid account-pricing-grid">
+                    <% const accountPackages = Array.isArray(products) ? products : []; %>
+                    <% accountPackages.forEach(function(pack) { %>
+                        <% const isPopular = String(pack.tagline || '').toUpperCase().includes('POPULAR'); %>
+                        <article class="pricing-card account-pricing-card <%= isPopular ? 'pricing-card-popular' : '' %>">
+                            <% if (isPopular) { %>
+                                <div class="plan-popular-badge"><%= pack.tagline %></div>
+                            <% } %>
+                            <div class="plan-name"><%= pack.name %></div>
+                            <div class="plan-price">₹<%= pack.amount_inr %></div>
+                            <div class="plan-credits"><%= pack.credits_minutes %> minutes of captions</div>
+                            <ul class="plan-features">
+                                <% (pack.includes || []).forEach(function(item) { %>
+                                    <li>✓ <%= item %></li>
+                                <% }); %>
+                            </ul>
+                            <button
+                                class="btn <%= isPopular ? 'btn-primary' : 'btn-outline' %> btn-full account-buy-btn"
+                                id="account-buy-<%= pack.id %>"
+                                onclick="startAccountTopup('<%= pack.id %>')"
+                            >
+                                Buy <%= pack.name %>
+                            </button>
+                        </article>
+                    <% }); %>
+                </div>
+
+                <div class="pricing-note account-pricing-note">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3v4M8 11v.5" stroke="#A259FF" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                    Secure checkout powered by Razorpay. Credits are added to your same key.
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <%- include('partials/landing/footer') %>
+
+    <script src="/assets/js/landing.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        window.ACCOUNT_CHECKOUT = {
+            razorpayKeyId: "<%= razorpayKeyId %>",
+            checkout: <%- JSON.stringify(checkout || {}) %>
+        };
+    </script>
+    <script src="/assets/js/account.js"></script>
+</body>
+
+</html>

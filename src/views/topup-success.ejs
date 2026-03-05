@@ -1,41 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <title>Payment Successful - Qwint Caption</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/assets/css/style.css" />
-    <style>
-        body {
-            background-color: var(--clr-bg);
-            color: var(--clr-text);
-            font-family: inherit;
-        }
-
-        .success-container {
-            max-width: 600px;
-            margin: 100px auto;
-            text-align: center;
-            padding: 40px;
-            background: var(--clr-bg-alt);
-            border-radius: 16px;
-            border: 1px solid var(--clr-border);
-        }
-
-        .check-icon {
-            font-size: 64px;
-            color: var(--clr-success);
-            margin-bottom: 20px;
-        }
-    </style>
-    <%- include('partials/meta-pixel') %>
-</head>
+<%- include('partials/landing/head', {
+    pageTitle: 'Payment Successful - Qwint Caption',
+    pageDescription: 'Your top-up payment was successful.',
+    robots: 'noindex, nofollow',
+    extraCssPath: '/assets/css/landing-pages.css'
+}) %>
 
 <body>
-    <%- include('partials/navbar') %>
+    <%- include('partials/landing/navbar') %>
 
-        <main style="min-height: 80vh; display: flex; align-items: center; justify-content: center;">
+        <main class="subpage-main" style="display: flex; align-items: center; justify-content: center;">
             <div class="success-container">
                 <div class="check-icon">✓</div>
                 <h2>Payment Successful</h2>
@@ -46,7 +22,8 @@
             </div>
         </main>
 
-        <%- include('partials/footer') %>
+        <%- include('partials/landing/footer') %>
+        <script src="/assets/js/landing.js"></script>
 </body>
 
 </html>
