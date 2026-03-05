@@ -29,14 +29,37 @@ app.use(helmet({
     contentSecurityPolicy: isDev ? false : {
         directives: {
             "default-src": ["'self'"],
-            "script-src": ["'self'", "'unsafe-inline'", "https://js.stripe.com", "https://connect.facebook.net"],
+            "script-src": [
+                "'self'", "'unsafe-inline'",
+                "https://js.stripe.com",
+                "https://connect.facebook.net",
+                "https://www.googletagmanager.com",
+                "https://www.clarity.ms"
+            ],
             "script-src-attr": ["'unsafe-inline'"],
             "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             "style-src-attr": ["'unsafe-inline'"],
             "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
-            "img-src": ["'self'", "data:", "https://images.stripe.com", "https://www.facebook.com"],
+            "img-src": [
+                "'self'", "data:",
+                "https://images.stripe.com",
+                "https://www.facebook.com",
+                "https://www.google-analytics.com",
+                "https://*.google-analytics.com",
+                "https://www.googletagmanager.com",
+                "https://*.clarity.ms",
+                "https://c.clarity.ms"
+            ],
             "frame-src": ["https://js.stripe.com", "https://buy.stripe.com"],
-            "connect-src": ["'self'", "https://www.facebook.com"],
+            "connect-src": [
+                "'self'",
+                "https://www.facebook.com",
+                "https://www.google-analytics.com",
+                "https://*.google-analytics.com",
+                "https://*.analytics.google.com",
+                "https://*.clarity.ms",
+                "https://w.clarity.ms"
+            ],
         },
     },
 }));
