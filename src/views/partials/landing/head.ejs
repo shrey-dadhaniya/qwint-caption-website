@@ -1,0 +1,46 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title><%= typeof pageTitle !== 'undefined' && pageTitle ? pageTitle : 'Qwint Caption — AI Caption Generator for Adobe Premiere Pro' %></title>
+    <meta name="description"
+        content="<%= typeof pageDescription !== 'undefined' && pageDescription ? pageDescription : 'Qwint Caption is an AI-powered plugin for Adobe Premiere Pro that automatically generates accurate captions and subtitles.' %>" />
+    <meta name="keywords"
+        content="Premiere Pro captions, AI subtitles, auto caption generator, Premiere Pro plugin, video captions, subtitle generator" />
+    <meta name="author" content="Qwint Soft LLP" />
+    <meta name="robots" content="<%= typeof robots !== 'undefined' && robots ? robots : 'index, follow' %>" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://qwintcaption.com/" />
+    <meta property="og:title" content="Qwint Caption — AI Caption Generator for Adobe Premiere Pro" />
+    <meta property="og:description"
+        content="Generate accurate captions automatically inside Adobe Premiere Pro. Save hours of manual editing." />
+    <meta property="og:image" content="https://qwintcaption.com/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Qwint Caption — AI Caption Generator for Adobe Premiere Pro" />
+    <meta name="twitter:description"
+        content="AI-powered Premiere Pro plugin that auto-generates captions in seconds." />
+    <link rel="canonical" href="https://qwintcaption.com/" />
+    <link rel="icon" type="image/svg+xml" href="/assets/images/logo.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Space+Grotesk:wght@600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap" />
+
+    <link rel="stylesheet" href="/assets/css/landing.css" />
+    <% if (typeof extraCssPath !== 'undefined' && extraCssPath) { %>
+        <link rel="stylesheet" href="<%= extraCssPath %>" />
+    <% } %>
+    <% if (typeof extraCssPaths !== 'undefined' && Array.isArray(extraCssPaths)) { %>
+        <% extraCssPaths.forEach(function(cssPath) { %>
+            <% if (cssPath) { %>
+                <link rel="stylesheet" href="<%= cssPath %>" />
+            <% } %>
+        <% }) %>
+    <% } %>
+    <%- include('../meta-pixel') %>
+</head>

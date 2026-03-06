@@ -1647,7 +1647,7 @@ footer {
     text-align: center;
 }
 
-/* Stripe badge */
+/* Payment badge */
 .stripe-badge {
     display: inline-flex;
     align-items: center;

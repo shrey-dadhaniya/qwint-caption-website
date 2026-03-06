@@ -15,27 +15,22 @@ services:
     # ── Environment Variables ──────────────────────────────────────
     # Do NOT commit your real .env file.
     # In Coolify: set each variable via the "Environment Variables" UI tab.
-    # Locally: create a .env file (see example.env for the required keys).
+    # Locally: create a .env file (see .env.example or example.env for required keys).
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
       - BASE_URL=${BASE_URL}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      - STRIPE_PRICING_TABLE_ID=${STRIPE_PRICING_TABLE_ID}
-      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
       - LITELLM_URL=${LITELLM_URL}
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
-      - PAYMENT_LINK_STARTER_ID=${PAYMENT_LINK_STARTER_ID}
-      - PAYMENT_LINK_LITE_ID=${PAYMENT_LINK_LITE_ID}
-      - PAYMENT_LINK_CREATOR_ID=${PAYMENT_LINK_CREATOR_ID}
-      - PAYMENT_LINK_STUDIO_ID=${PAYMENT_LINK_STUDIO_ID}
-      - PAYMENT_LINK_ID=${PAYMENT_LINK_ID}
 
     # ── Volumes ────────────────────────────────────────────────────
     # Persist generated plugin zips across container restarts.
     # Without this, every redeploy would wipe existing download links.
+    # For local custom pricing, replace payment-config.example.json with payment-config.json.
     volumes:
+      - ./payment-config.example.json:/app/payment-config.json:ro
       - plugin_downloads:/app/src/public/downloads
 
     # ── Health check ───────────────────────────────────────────────

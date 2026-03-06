@@ -7,6 +7,10 @@ node_modules/
 !.env.example
 !example.env
 
+# ── Local Payment Config (keep example tracked) ────────────────
+payment-config.json
+!payment-config.example.json
+
 # ── Generated plugin zips (contain customer API keys) ──────────
 src/public/downloads/
 

@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qwint Caption — AI Caption Generator for Adobe Premiere Pro</title>
+    <meta name="description"
+        content="Qwint Caption is an AI-powered plugin for Adobe Premiere Pro that automatically generates accurate captions and subtitles. Save hours of manual editing. Try free." />
+    <meta name="keywords"
+        content="Premiere Pro captions, AI subtitles, auto caption generator, Premiere Pro plugin, video captions, subtitle generator" />
+    <meta name="author" content="Qwint Soft LLP" />
+    <meta property="og:title" content="Qwint Caption — AI Caption Generator for Adobe Premiere Pro" />
+    <meta property="og:description"
+        content="Generate accurate captions automatically inside Adobe Premiere Pro. Save hours of manual editing." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://qwintcaption.com/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Qwint Caption — AI Caption Generator for Adobe Premiere Pro" />
+    <meta name="twitter:description"
+        content="AI-powered Premiere Pro plugin that auto-generates captions in seconds." />
+    <link rel="canonical" href="https://qwintcaption.com/" />
+
+    <!-- Google Fonts — display=swap avoids render-blocking -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Space+Grotesk:wght@600;700;800&display=swap"
+        rel="stylesheet" />
+    <!-- Preload critical font subset -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap" />
+
+    <!-- Razorpay — deferred to not block initial render -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+
+    <!-- Google Analytics GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <!-- Facebook Pixel -->
+    <script>
+        !function (f, b, e, v, n, t, s) {
+            if (f.fbq) return; n = f.fbq = function () {
+                n.callMethod ?
+                n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+            };
+            if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+            n.queue = []; t = b.createElement(e); t.async = !0;
+            t.src = v; s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s)
+        }(window, document, 'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', 'XXXXXXXXXXXXXXXXX');
+        fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id=XXXXXXXXXXXXXXXXX&ev=PageView&noscript=1" />
+    </noscript>
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-inner">
+            <a href="#" class="logo">
+                <span class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect width="28" height="28" rx="7" fill="url(#logoGrad)" />
+                        <path d="M7 10h14M7 14h10M7 18h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" />
+                        <defs>
+                            <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#6A00FF" />
+                                <stop offset="1" stop-color="#A259FF" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span>Qwint <strong>Caption</strong></span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+            <a href="#download" class="btn btn-primary btn-sm" id="nav-cta">Download Free</a>
+            <button class="hamburger" id="hamburger" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+        <div class="mobile-menu" id="mobile-menu">
+            <a href="#how-it-works">How It Works</a>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+            <a href="#download" class="btn btn-primary" id="mobile-nav-cta">Download Free</a>
+        </div>
+    </nav>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero" id="hero">
+        <div class="hero-glow hero-glow-1"></div>
+        <div class="hero-glow hero-glow-2"></div>
+        <div class="container hero-inner">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Adobe Premiere Pro Plugin — Now Available
+            </div>
+            <h1 class="hero-headline">
+                Auto Generate Video Captions<br />
+                in <span class="gradient-text">Premiere Pro in Seconds</span>
+            </h1>
+            <p class="hero-subheadline">
+                AI plugin that automatically creates captions inside Adobe Premiere Pro.<br class="desktop-only" />
+                Save hours of manual editing — no account needed to get started.
+            </p>
+            <div class="hero-cta-group">
+                <a href="#instant-download" class="btn btn-primary btn-hero" id="hero-download-btn"
+                    onclick="trackDownload()">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 3v10M6 9l4 4 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M3 15h14" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    Download Plugin Free
+                </a>
+                <a href="#demo" class="btn btn-ghost btn-lg" id="hero-demo-btn">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="8" stroke="#A259FF" stroke-width="2" />
+                        <path d="M8 7l6 3-6 3V7z" fill="#A259FF" />
+                    </svg>
+                    Watch 20s Demo
+                </a>
+            </div>
+            <p class="hero-no-signup">No signup required &nbsp;·&nbsp; 1-minute free trial included</p>
+            <div class="hero-social-proof">
+                <div class="avatar-stack">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="avatar-img"
+                        loading="lazy" />
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya" alt="User" class="avatar-img"
+                        loading="lazy" />
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rohan" alt="User" class="avatar-img"
+                        loading="lazy" />
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" alt="User" class="avatar-img"
+                        loading="lazy" />
+                </div>
+                <div class="social-proof-text">
+                    <div class="stars">★★★★★</div>
+                    <span>Trusted by <strong>2,000+</strong> video editors</span>
+                </div>
+            </div>
+
+            <!-- TRUST BADGES STRIP -->
+            <div class="trust-badges-strip">
+                <div class="trust-badge">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 1l1.8 4.9H15l-4.4 3.2 1.7 4.9L8 11l-4.3 3 1.7-4.9L1 6.9h5.2L8 1z" fill="#FFB800" />
+                    </svg>
+                    Works with Premiere Pro 2022+
+                </div>
+                <div class="trust-badge">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="6" r="3" stroke="#A259FF" stroke-width="1.5" />
+                        <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#A259FF" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                    Used by 2,000+ Video Editors
+                </div>
+                <div class="trust-badge">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 2l1 3h3l-2.5 2 1 3L8 8.5 5.5 10l1-3L4 5h3l1-3z" stroke="#A259FF" stroke-width="1.2"
+                            stroke-linejoin="round" />
+                    </svg>
+                    AI-Powered Caption Generation
+                </div>
+                <div class="trust-badge">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect x="4" y="1" width="8" height="11" rx="2" stroke="#00C896" stroke-width="1.5" />
+                        <path d="M6 13h4" stroke="#00C896" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M6 6l1.5 1.5L10 5" stroke="#00C896" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    No Account Required
+                </div>
+            </div>
+
+            <!-- HERO VISUAL: Premiere UI Mockup -->
+            <div class="hero-visual">
+                <div class="premiere-mockup">
+                    <div class="premiere-titlebar">
+                        <div class="titlebar-dots">
+                            <span class="dot dot-red"></span>
+                            <span class="dot dot-yellow"></span>
+                            <span class="dot dot-green"></span>
+                        </div>
+                        <span class="titlebar-title">Adobe Premiere Pro — Qwint Caption</span>
+                    </div>
+                    <div class="premiere-body">
+                        <div class="premiere-panel premiere-preview">
+                            <div class="video-preview">
+                                <div class="video-frame">
+                                    <div class="video-scene">
+                                        <div class="video-person">
+                                            <div class="person-head"></div>
+                                            <div class="person-body"></div>
+                                        </div>
+                                        <div class="caption-overlay" id="captionOverlay">
+                                            <div class="caption-line active" id="cap1">"This is how AI auto-generates
+                                                your captions..."</div>
+                                            <div class="caption-line" id="cap2">"...directly inside Adobe Premiere Pro."
+                                            </div>
+                                            <div class="caption-line" id="cap3">"Save hours. Zero manual typing."</div>
+                                        </div>
+                                        <div class="caption-cursor" id="captionCursor"></div>
+                                    </div>
+                                </div>
+                                <div class="video-controls">
+                                    <div class="vc-btn vc-play">▶</div>
+                                    <div class="vc-timeline">
+                                        <div class="vc-progress" id="vcProgress"></div>
+                                    </div>
+                                    <div class="vc-time">0:42 / 2:30</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="premiere-panel premiere-plugin-panel">
+                            <div class="plugin-header">
+                                <div class="plugin-logo-small">
+                                    <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
+                                        <rect width="28" height="28" rx="7" fill="url(#lg2)" />
+                                        <path d="M7 10h14M7 14h10M7 18h7" stroke="#fff" stroke-width="2.2"
+                                            stroke-linecap="round" />
+                                        <defs>
+                                            <linearGradient id="lg2" x1="0" y1="0" x2="28" y2="28">
+                                                <stop stop-color="#6A00FF" />
+                                                <stop offset="1" stop-color="#A259FF" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                </div>
+                                <span class="plugin-name">Qwint Caption</span>
+                                <span class="plugin-badge-ai">AI</span>
+                            </div>
+                            <div class="plugin-body">
+                                <div class="plugin-section-label">Language</div>
+                                <div class="plugin-select">English (Auto-detect) ▾</div>
+                                <div class="plugin-section-label">Caption Style</div>
+                                <div class="plugin-style-row">
+                                    <div class="style-chip active">Standard</div>
+                                    <div class="style-chip">Reels</div>
+                                    <div class="style-chip">Bold</div>
+                                </div>
+                                <div class="plugin-section-label">Generate For</div>
+                                <div class="plugin-select">Entire Timeline ▾</div>
+                                <button class="plugin-generate-btn" id="generateBtn" onclick="animateGenerate()">
+                                    <span class="generate-spinner" id="generateSpinner"></span>
+                                    <span id="generateBtnText">✦ Generate Captions</span>
+                                </button>
+                                <div class="plugin-status" id="pluginStatus">
+                                    <div class="status-line"><span class="status-dot status-done"></span> Transcribing
+                                        audio...</div>
+                                    <div class="status-line"><span class="status-dot status-done"></span> Generating
+                                        captions...</div>
+                                    <div class="status-line status-active"><span
+                                            class="status-dot status-active-dot"></span> Placing on timeline...</div>
+                                </div>
+                                <div class="plugin-credits-bar">
+                                    <span class="credits-label">Credits remaining</span>
+                                    <span class="credits-value">28 min</span>
+                                </div>
+                                <div class="credits-bar-track">
+                                    <div class="credits-bar-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="premiere-timeline">
+                        <div class="timeline-label">Timeline</div>
+                        <div class="timeline-tracks">
+                            <div class="track track-v1">
+                                <div class="clip clip-video"></div>
+                                <div class="clip clip-video clip-short"></div>
+                            </div>
+                            <div class="track track-a1">
+                                <div class="clip clip-audio"></div>
+                            </div>
+                            <div class="track track-captions">
+                                <div class="caption-clip" id="cc1">Caption</div>
+                                <div class="caption-clip" id="cc2">Caption</div>
+                                <div class="caption-clip" id="cc3">Caption</div>
+                                <div class="caption-clip generating" id="cc4">Generating...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mockup-glow"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== LOGO BAR ===== -->
+    <section class="logo-bar">
+        <div class="container">
+            <p class="logo-bar-label">Used by creators on</p>
+            <div class="platform-logos">
+                <div class="platform-logo">
+                    <svg width="90" height="24" viewBox="0 0 90 24" fill="none"><text x="0" y="18" font-family="Inter"
+                            font-size="16" font-weight="700" fill="#ffffff80">YouTube</text></svg>
+                </div>
+                <div class="platform-logo">
+                    <svg width="90" height="24" viewBox="0 0 90 24" fill="none"><text x="0" y="18" font-family="Inter"
+                            font-size="16" font-weight="700" fill="#ffffff80">Instagram</text></svg>
+                </div>
+                <div class="platform-logo">
+                    <svg width="90" height="24" viewBox="0 0 90 24" fill="none"><text x="0" y="18" font-family="Inter"
+                            font-size="16" font-weight="700" fill="#ffffff80">TikTok</text></svg>
+                </div>
+                <div class="platform-logo">
+                    <svg width="90" height="24" viewBox="0 0 90 24" fill="none"><text x="0" y="18" font-family="Inter"
+                            font-size="16" font-weight="700" fill="#ffffff80">LinkedIn</text></svg>
+                </div>
+                <div class="platform-logo">
+                    <svg width="120" height="24" viewBox="0 0 120 24" fill="none"><text x="0" y="18" font-family="Inter"
+                            font-size="16" font-weight="700" fill="#ffffff80">Adobe Premiere</text></svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== HOW IT WORKS ===== -->
+    <section class="section how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Simple Setup</span>
+                <h2>How It Works</h2>
+                <p>Get captions generated in under 60 seconds — no learning curve required.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card" data-step="1">
+                    <div class="step-number">01</div>
+                    <div class="step-icon">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                            <rect width="40" height="40" rx="12" fill="url(#sg1)" />
+                            <path d="M13 20h14M20 13l7 7-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <defs>
+                                <linearGradient id="sg1" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Install Qwint Caption Plugin</h3>
+                    <p>Download and install the plugin from our website in one click. Compatible with Premiere Pro 2022
+                        and above.</p>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="step-card" data-step="2">
+                    <div class="step-number">02</div>
+                    <div class="step-icon">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                            <rect width="40" height="40" rx="12" fill="url(#sg2)" />
+                            <rect x="11" y="15" width="18" height="12" rx="3" stroke="#fff" stroke-width="2" />
+                            <path d="M17 20l4 2.5 4-2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="sg2" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Open Premiere Pro &amp; Click Generate</h3>
+                    <p>Open your project in Premiere Pro. Find Qwint Caption in the Extensions panel and click "Generate
+                        Captions".</p>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="step-card" data-step="3">
+                    <div class="step-number">03</div>
+                    <div class="step-icon">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                            <rect width="40" height="40" rx="12" fill="url(#sg3)" />
+                            <path d="M12 26l5-5 4 4 7-9" stroke="#fff" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <circle cx="28" cy="13" r="3" fill="#fff" opacity="0.6" />
+                            <defs>
+                                <linearGradient id="sg3" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>AI Instantly Creates Your Captions</h3>
+                    <p>Our AI transcribes the audio and places accurate captions directly on your timeline. Edit, style,
+                        and export.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FEATURES ===== -->
+    <section class="section features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Why Qwint</span>
+                <h2>Everything You Need for Caption Excellence</h2>
+                <p>Powerful AI. Seamless Premiere Pro integration. Zero friction.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card feature-card-large">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M4 16C4 9.37 9.37 4 16 4s12 5.37 12 12-5.37 12-12 12S4 22.63 4 16z"
+                                stroke="url(#fi1)" stroke-width="2" />
+                            <path d="M10 16h12M16 10v12" stroke="url(#fi1)" stroke-width="2" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi1" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Automatic AI Caption Generation</h3>
+                    <p>State-of-the-art speech recognition AI transcribes audio with 98%+ accuracy. No more manual
+                        typing, ever.</p>
+                    <div class="feature-tag">Core Feature</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect x="4" y="6" width="24" height="18" rx="3" stroke="url(#fi2)" stroke-width="2" />
+                            <path d="M4 12h24" stroke="url(#fi2)" stroke-width="1.5" />
+                            <path d="M10 18h12" stroke="url(#fi2)" stroke-width="2" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi2" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Works Inside Premiere Pro</h3>
+                    <p>No switching apps. Native plugin experience in your existing workflow.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="11" stroke="url(#fi3)" stroke-width="2" />
+                            <path d="M16 8v8l5 3" stroke="url(#fi3)" stroke-width="2" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi3" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Multi-language Support</h3>
+                    <p>Generate captions in 50+ languages. Translate automatically for global reach.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect x="8" y="4" width="16" height="22" rx="3" stroke="url(#fi4)" stroke-width="2" />
+                            <path d="M12 14h8M12 18h6" stroke="url(#fi4)" stroke-width="1.5" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi4" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Perfect for Reels, YouTube &amp; Shorts</h3>
+                    <p>Caption styles pre-optimized for every platform's format and aspect ratio.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M28 16l-4-8H8l-4 8 4 8h16l4-8z" stroke="url(#fi5)" stroke-width="2"
+                                stroke-linejoin="round" />
+                            <path d="M16 12v8M12 16h8" stroke="url(#fi5)" stroke-width="1.5" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fi5" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Fast Social Media Export</h3>
+                    <p>Export caption files (SRT, VTT) or baked-in captions in one click.</p>
+                </div>
+                <div class="feature-card feature-card-highlight">
+                    <div class="feature-icon-wrap">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M16 4l3 8h8l-6.5 4.7 2.5 8.3L16 20l-7 5 2.5-8.3L5 12h8l3-8z" stroke="url(#fi6)"
+                                stroke-width="2" stroke-linejoin="round" />
+                            <defs>
+                                <linearGradient id="fi6" x1="0" y1="0" x2="32" y2="32">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Saves Hours of Editing</h3>
+                    <p>What took 3+ hours now takes 30 seconds. 10x your productivity.</p>
+                    <div class="feature-stat">10x faster</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FREE TRIAL ===== -->
+    <section class="section free-trial" id="free-trial">
+        <div class="container">
+            <div class="trial-card">
+                <div class="trial-glow"></div>
+                <div class="trial-content">
+                    <div class="trial-badge">🎁 Free — No Credit Card Required</div>
+                    <h2>1 Minute Free Trial</h2>
+                    <p class="trial-desc">Generate captions for your first minute of video — completely free. Experience
+                        the power of AI captions with zero risk.</p>
+                    <ul class="trial-features-list">
+                        <li>✓ Full AI accuracy on your own video</li>
+                        <li>✓ Export &amp; use the captions</li>
+                        <li>✓ No signup required to try</li>
+                    </ul>
+                    <div class="trial-cta-wrap">
+                        <a href="#download" class="btn btn-primary btn-xl" id="trial-cta-btn" onclick="trackTrial()">
+                            Start Free Trial
+                        </a>
+                        <span class="trial-note">Then top-up with credits as needed</span>
+                    </div>
+                </div>
+                <div class="trial-visual">
+                    <div class="trial-counter">
+                        <div class="counter-circle">
+                            <svg viewBox="0 0 120 120" width="120" height="120">
+                                <circle cx="60" cy="60" r="52" fill="none" stroke="#ffffff15" stroke-width="8" />
+                                <circle cx="60" cy="60" r="52" fill="none" stroke="url(#trialGrad)" stroke-width="8"
+                                    stroke-dasharray="327" stroke-dashoffset="245" stroke-linecap="round"
+                                    transform="rotate(-90 60 60)" />
+                                <defs>
+                                    <linearGradient id="trialGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop stop-color="#6A00FF" />
+                                        <stop offset="1" stop-color="#A259FF" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="counter-label">
+                                <span class="counter-num">1</span>
+                                <span class="counter-unit">min free</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PRICING ===== -->
+    <section class="section pricing" id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Flexible Pricing</span>
+                <h2>Pay Only for What You Use</h2>
+                <p>Simple credit system. No subscriptions, no commitments. Top-up anytime.</p>
+            </div>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="plan-name">Starter</div>
+                    <div class="plan-price">₹199</div>
+                    <div class="plan-credits">30 minutes of captions</div>
+                    <ul class="plan-features">
+                        <li>✓ 30 min caption generation</li>
+                        <li>✓ All languages supported</li>
+                        <li>✓ SRT / VTT export</li>
+                        <li>✓ Reels-optimized styles</li>
+                    </ul>
+                    <button class="btn btn-outline btn-full" onclick="handlePayment(199, 30, 'Starter')"
+                        id="buy-starter">
+                        Buy Starter Credits
+                    </button>
+                </div>
+                <div class="pricing-card pricing-card-popular">
+                    <div class="plan-popular-badge">Most Popular</div>
+                    <div class="plan-name">Creator</div>
+                    <div class="plan-price">₹499</div>
+                    <div class="plan-credits">120 minutes of captions</div>
+                    <ul class="plan-features">
+                        <li>✓ 120 min caption generation</li>
+                        <li>✓ All languages supported</li>
+                        <li>✓ SRT / VTT export</li>
+                        <li>✓ Priority AI processing</li>
+                        <li>✓ Caption style customization</li>
+                    </ul>
+                    <button class="btn btn-primary btn-full" onclick="handlePayment(499, 120, 'Creator')"
+                        id="buy-creator">
+                        Buy Creator Credits
+                    </button>
+                </div>
+                <div class="pricing-card">
+                    <div class="plan-name">Agency</div>
+                    <div class="plan-price">₹999</div>
+                    <div class="plan-credits">300 minutes of captions</div>
+                    <ul class="plan-features">
+                        <li>✓ 300 min caption generation</li>
+                        <li>✓ All languages supported</li>
+                        <li>✓ SRT / VTT export</li>
+                        <li>✓ Priority AI processing</li>
+                        <li>✓ Caption style customization</li>
+                        <li>✓ Bulk export tools</li>
+                    </ul>
+                    <button class="btn btn-outline btn-full" onclick="handlePayment(999, 300, 'Agency')"
+                        id="buy-agency">
+                        Buy Agency Credits
+                    </button>
+                </div>
+            </div>
+            <div class="pricing-note">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3v4M8 11v.5" stroke="#A259FF" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
+                Credits never expire. Use them at your own pace. Secure payment via Razorpay.
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== DEMO VIDEO ===== -->
+    <section class="section demo-section" id="demo">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">See It In Action</span>
+                <h2>Watch How Qwint Caption Works</h2>
+                <p>From install to captions on your timeline in under 60 seconds.</p>
+            </div>
+            <div class="demo-video-wrap">
+                <div class="demo-video-player">
+                    <div class="demo-play-overlay" id="demoPlayOverlay" onclick="playDemo()">
+                        <div class="demo-play-btn">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <path d="M10 6l16 10L10 26V6z" fill="#fff" />
+                            </svg>
+                        </div>
+                        <span>Watch 60-Second Demo</span>
+                    </div>
+                    <div class="demo-thumbnail">
+                        <div class="demo-thumb-content">
+                            <div class="demo-screen-mockup">
+                                <div class="dsm-header"></div>
+                                <div class="dsm-body">
+                                    <div class="dsm-timeline">
+                                        <div class="dsm-track"></div>
+                                        <div class="dsm-track dsm-track-caption"></div>
+                                    </div>
+                                    <div class="dsm-preview">
+                                        <div class="dsm-caption-text typewriter" id="demoTypewriter">AI generating your
+                                            captions...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Replace src with actual YouTube embed or video URL -->
+                    <iframe id="demoIframe" class="demo-iframe" src="" title="Qwint Caption Demo" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen style="display:none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== TESTIMONIALS ===== -->
+    <section class="section testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Loved by Creators</span>
+                <h2>What Video Editors Are Saying</h2>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <blockquote>"I used to spend 2-3 hours per video adding captions manually. Qwint Caption does it in
+                        literally 30 seconds. This is an absolute game changer for my YouTube workflow."</blockquote>
+                    <div class="testimonial-author">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun&backgroundColor=6A00FF"
+                            alt="Arjun S." class="testimonial-avatar" loading="lazy" />
+                        <div>
+                            <div class="author-name">Arjun S.</div>
+                            <div class="author-role">YouTuber · 180K Subscribers</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card testimonial-card-featured">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <blockquote>"As a reel editor handling 20+ clients, captioning was killing my time. Qwint Caption
+                        lets me deliver faster and charge more. Best plugin I've bought all year."</blockquote>
+                    <div class="testimonial-author">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya&backgroundColor=A259FF"
+                            alt="Priya M." class="testimonial-avatar" loading="lazy" />
+                        <div>
+                            <div class="author-name">Priya M.</div>
+                            <div class="author-role">Social Media Agency · Mumbai</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <blockquote>"The accuracy is insanely good. Even technical jargon gets transcribed correctly. And it
+                        works inside Premiere Pro — no switching tools. Love this!"</blockquote>
+                    <div class="testimonial-author">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rohan&backgroundColor=6A00FF"
+                            alt="Rohan D." class="testimonial-avatar" loading="lazy" />
+                        <div>
+                            <div class="author-name">Rohan D.</div>
+                            <div class="author-role">Video Editor · Freelancer</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <blockquote>"Hindi captions work perfectly! I create content in Hindi and English both. Qwint
+                        Caption handles code-switching better than any tool I've tried."</blockquote>
+                    <div class="testimonial-author">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya&backgroundColor=A259FF"
+                            alt="Ananya K." class="testimonial-avatar" loading="lazy" />
+                        <div>
+                            <div class="author-name">Ananya K.</div>
+                            <div class="author-role">Content Creator · Delhi</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FAQ ===== -->
+    <section class="section faq" id="faq">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Got Questions?</span>
+                <h2>Frequently Asked Questions</h2>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Does it work with Premiere Pro 2023 and 2024?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! Qwint Caption is fully compatible with Adobe Premiere Pro 2022, 2023, and 2024 (versions
+                            22.0 and above). We regularly update the plugin to support the latest Premiere Pro releases,
+                            so you'll always be covered.</p>
+                    </div>
+                </div>
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How accurate are the AI-generated captions?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Qwint Caption uses state-of-the-art AI transcription that achieves 95-98% word accuracy on
+                            clear audio. Accuracy depends on audio quality, background noise, and speaker clarity. We
+                            recommend recording in a quiet environment for best results. You can always fine-tune
+                            captions directly in Premiere Pro after generation.</p>
+                    </div>
+                </div>
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Which languages are supported?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We support 50+ languages including English, Hindi, Spanish, French, German, Portuguese,
+                            Japanese, Korean, Arabic, Tamil, Telugu, and many more. The plugin auto-detects the language
+                            spoken in your video, or you can manually select a language for best accuracy.</p>
+                    </div>
+                </div>
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How does the credit system work?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Credits are measured in minutes of video processed. For example, generating captions for a
+                            5-minute video uses 5 minutes of credits. You get 1 minute free on signup. After that, you
+                            can purchase credit packs starting at ₹199. Credits never expire, so you can use them at
+                            your own pace.</p>
+                    </div>
+                </div>
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>What caption formats can I export?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Qwint Caption places captions directly on your Premiere Pro timeline as editable text layers.
+                            You can also export as SRT (SubRip), VTT (WebVTT), or bake captions into your video during
+                            export — whichever workflow suits you best.</p>
+                    </div>
+                </div>
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Is my video data secure?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Absolutely. Your video audio is processed securely and is never stored or used for training
+                            purposes. All data is encrypted in transit. We take your privacy seriously — see our Privacy
+                            Policy for full details.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FINAL CTA ===== -->
+    <section class="section final-cta" id="download">
+        <div class="container">
+            <div class="final-cta-card">
+                <div class="final-glow-1"></div>
+                <div class="final-glow-2"></div>
+                <div class="final-cta-content">
+                    <h2>Start Creating Captions Automatically</h2>
+                    <p>Join 2,000+ video editors who've cut caption time to zero. Download free — your first minute of
+                        captions is on us.</p>
+                    <div class="final-email-capture">
+                        <input type="email" id="emailInput" placeholder="Enter your email" class="email-input" />
+                        <button class="btn btn-primary btn-lg" id="final-download-btn" onclick="handleDownload()">
+                            Download Plugin Free
+                        </button>
+                    </div>
+                    <div class="final-trust-badges">
+                        <span>🔒 No credit card required</span>
+                        <span>⚡ 1 free minute instantly</span>
+                        <span>🎯 Works in Premiere Pro 2022+</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="#" class="logo footer-logo">
+                        <span class="logo-icon">
+                            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                                <rect width="28" height="28" rx="7" fill="url(#fLogo)" />
+                                <path d="M7 10h14M7 14h10M7 18h7" stroke="#fff" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <defs>
+                                    <linearGradient id="fLogo" x1="0" y1="0" x2="28" y2="28">
+                                        <stop stop-color="#6A00FF" />
+                                        <stop offset="1" stop-color="#A259FF" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </span>
+                        <span>Qwint <strong>Caption</strong></span>
+                    </a>
+                    <p class="footer-tagline">AI Caption Generator for Adobe Premiere Pro</p>
+                    <p class="footer-company">A product of <strong>Qwint Soft LLP</strong></p>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#how-it-works">How It Works</a></li>
+                        <li><a href="#download">Download Plugin</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About Qwint Soft</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="mailto:support@qwintsoft.com">support@qwintsoft.com</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 Qwint Soft LLP. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="mailto:support@qwintsoft.com">Contact Support</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===== STICKY MOBILE CTA ===== -->
+    <div class="sticky-cta" id="stickyCta">
+        <a href="#instant-download" class="btn btn-primary btn-full sticky-cta-btn" id="sticky-download-btn"
+            onclick="trackDownload()">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M10 3v10M6 9l4 4 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                <path d="M3 15h14" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Download Plugin Free
+        </a>
+        <p class="sticky-cta-note">No signup · 1 free minute</p>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-icon">✅</div>
+            <h3>Payment Successful!</h3>
+            <p id="modalMessage">Your credits have been added to your account.</p>
+            <button class="btn btn-primary" onclick="closeModal()">Continue</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

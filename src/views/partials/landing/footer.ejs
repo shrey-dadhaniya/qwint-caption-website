@@ -1,0 +1,70 @@
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <a href="/" class="logo footer-logo">
+                    <span class="logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                            <rect width="28" height="28" rx="7" fill="url(#fLogo)" />
+                            <path d="M7 10h14M7 14h10M7 18h7" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+                            <defs>
+                                <linearGradient id="fLogo" x1="0" y1="0" x2="28" y2="28">
+                                    <stop stop-color="#6A00FF" />
+                                    <stop offset="1" stop-color="#A259FF" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </span>
+                    <span>Qwint <strong>Caption</strong></span>
+                </a>
+                <p class="footer-tagline">AI Caption Generator for Adobe Premiere Pro</p>
+                <p class="footer-company">A product of <strong>Qwint Soft LLP</strong></p>
+            </div>
+            <div class="footer-links-col">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/#pricing">Pricing</a></li>
+                    <li><a href="/#how-it-works">How It Works</a></li>
+                    <li><a href="/#download">Download Plugin</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/support">Support</a></li>
+                    <li><a href="/refund">Refund Policy</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/privacy">Privacy Policy</a></li>
+                    <li><a href="/terms">Terms of Service</a></li>
+                    <li><a href="/#faq">FAQ</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Qwint Soft LLP. All rights reserved.</p>
+            <div class="footer-legal">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+                <a href="mailto:support@qwintsoft.com">Contact Support</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+<script>
+    if (typeof window.showToast !== 'function') {
+        window.showToast = function (msg, isError) {
+            const t = document.getElementById('toast');
+            if (!t) return;
+            t.textContent = msg || '';
+            t.className = 'toast show' + (isError ? ' error' : '');
+            setTimeout(() => { t.className = 'toast'; }, 3000);
+        };
+    }
+</script>

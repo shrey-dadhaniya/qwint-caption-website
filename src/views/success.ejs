@@ -1,196 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Successful — Qwint Caption</title>
-    <link rel="stylesheet" href="/assets/css/style.css" />
-    <link rel="icon" type="image/svg+xml" href="/assets/images/logo.svg" />
-    <style>
-        .card {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 520px;
-            background: var(--clr-bg-alt);
-            border: 1px solid var(--clr-border);
-            border-radius: var(--radius-lg);
-            padding: 40px 36px;
-            margin: 40px auto;
-            box-shadow: var(--shadow-xl);
-        }
-
-        .success-badge {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            margin: 0 auto 24px;
-            background: rgba(34, 197, 94, 0.15);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .success-badge svg {
-            width: 30px;
-            height: 30px;
-            stroke: var(--clr-success);
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            text-align: center;
-            margin-bottom: 8px;
-            font-family: var(--font-head);
-            color: var(--clr-text);
-        }
-
-        .subtitle {
-            text-align: center;
-            color: var(--clr-text-2);
-            font-size: 0.9rem;
-            margin-bottom: 32px;
-            line-height: 1.6;
-        }
-
-        .spinner-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-        }
-
-        .spinner {
-            width: 28px;
-            height: 28px;
-            border: 3px solid var(--clr-border);
-            border-top-color: var(--clr-primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .spinner-label {
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: var(--clr-text-3);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .order-details {
-            background: var(--clr-bg);
-            border: 1px solid var(--clr-border);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        .order-title {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--clr-text-3);
-            font-weight: 700;
-            margin-bottom: 14px;
-        }
-
-        .order-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
-
-        .order-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .order-key {
-            font-size: 0.8rem;
-            color: var(--clr-text-3);
-            white-space: nowrap;
-        }
-
-        .order-val {
-            font-size: 0.8rem;
-            color: var(--clr-text-2);
-            text-align: right;
-            word-break: break-all;
-            font-weight: 500;
-        }
-
-        .order-val.mono {
-            font-family: monospace;
-            font-size: 0.75rem;
-        }
-
-        .support-note {
-            background: rgba(245, 158, 11, 0.06);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            border-radius: var(--radius-sm);
-            padding: 14px 16px;
-            margin-bottom: 24px;
-            font-size: 0.78rem;
-            color: #d97706;
-            line-height: 1.6;
-        }
-
-        .support-note strong {
-            color: #f59e0b;
-        }
-
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s;
-        }
-
-        .actions.visible {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        @media (max-width: 640px) {
-            .card {
-                padding: 30px 20px;
-                margin: 20px auto;
-            }
-
-            .order-row {
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .order-val {
-                text-align: left;
-            }
-        }
-    </style>
-    <%- include('partials/meta-pixel') %>
-</head>
+<%- include('partials/landing/head', {
+    pageTitle: 'Payment Successful — Qwint Caption',
+    pageDescription: 'Payment confirmation and secure plugin download for Qwint Caption.',
+    robots: 'noindex, nofollow',
+    extraCssPath: '/assets/css/landing-pages.css'
+}) %>
 
 <body>
 
-    <%- include('partials/navbar') %>
+    <%- include('partials/landing/navbar') %>
 
-        <main
-            style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 100px 20px 40px; background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.08) 0%, transparent 40%), radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.05) 0%, transparent 40%);">
-            <div class="card">
+        <main class="success-main">
+            <div class="card success-card">
                 <!-- Success icon -->
                 <div class="success-badge">
                     <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -198,12 +21,13 @@
                     </svg>
                 </div>
 
-                <h1>Payment Confirmed</h1>
-                <p class="subtitle" id="sub-status">Setting up your plugin download…<br>This only takes a few seconds.
+                <p class="success-headline-badge">Order Complete</p>
+                <h1 class="payment-success-title">Payment Confirmed</h1>
+                <p class="subtitle" id="sub-status">Setting up your plugin download. This only takes a few seconds.
                 </p>
 
-                <!-- Spinner shown while webhook processes -->
-                <div id="loading-wrap" style="display:flex;justify-content:center;margin-bottom:24px;">
+                <!-- Spinner shown while backend fulfillment runs -->
+                <div id="loading-wrap" class="success-loading-wrap">
                     <div class="spinner-wrap">
                         <div class="spinner"></div>
                         <div class="spinner-label">Preparing your plugin</div>
@@ -211,14 +35,14 @@
                 </div>
 
                 <!-- Order Details -->
-                <div class="order-details">
+                <div class="order-details success-order-details">
                     <div class="order-title">Order Details</div>
 
-                    <% if (orderDetails.email) { %>
+                    <% if (orderDetails.phone) { %>
                         <div class="order-row">
-                            <span class="order-key">Email</span>
-                            <span class="order-val" id="od-email">
-                                <%= orderDetails.email %>
+                            <span class="order-key">Phone</span>
+                            <span class="order-val" id="od-phone">
+                                <%= orderDetails.phone %>
                             </span>
                         </div>
                         <% } %>
@@ -234,10 +58,19 @@
 
                                     <div class="order-row">
                                         <span class="order-key">Order ID</span>
-                                        <span class="order-val mono" id="od-session">
-                                            <%= orderDetails.session_id %>
+                                        <span class="order-val mono" id="od-order-id">
+                                            <%= orderDetails.order_id %>
                                         </span>
                                     </div>
+
+                                    <% if (orderDetails.payment_id) { %>
+                                        <div class="order-row">
+                                            <span class="order-key">Payment ID</span>
+                                            <span class="order-val mono" id="od-payment-id">
+                                                <%= orderDetails.payment_id %>
+                                            </span>
+                                        </div>
+                                        <% } %>
 
                                     <% if (orderDetails.customer_id) { %>
                                         <div class="order-row">
@@ -250,56 +83,46 @@
                 </div>
 
                 <!-- Support note -->
-                <div class="support-note">
-                    <strong>Need help?</strong> Email us with your <strong>Order ID</strong> and <strong>Email</strong>
-                    above
-                    and our team will assist you within 24 hours.
+                <div class="support-note success-support-note">
+                    <span class="support-note-icon">🛟</span>
+                    <p><strong>Need help?</strong> Email support with your <strong>Order ID</strong> and <strong>Phone</strong>.
+                        We usually respond within 24 hours.</p>
                 </div>
 
                 <!-- Actions (shown when key is ready) -->
-                <div class="actions" id="actions">
+                <div class="actions success-actions" id="actions">
                     <!-- Download button — populated dynamically from /api/check-key pluginUrl -->
-                    <a href="#" class="btn btn-primary" id="download-btn" style="display:none; justify-content:center;"
+                    <a href="#" class="btn btn-outline btn-secondary-outline btn-download-primary" id="download-btn"
+                        style="display:none;"
                         download>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" style="margin-right:8px;">
+                            stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
                         Download Plugin
                     </a>
-                    <button class="btn btn-outline" style="width:100%; justify-content:center; padding: 12px;"
-                        onclick="openPortal(event)">
-                        Manage Billing &amp; Invoices →
-                    </button>
-                    <a href="/" class="btn btn-outline"
-                        style="width:100%; justify-content:center; padding: 12px; border-color: transparent;">← Back to
-                        Plans</a>
                 </div>
             </div>
         </main>
 
-        <%- include('partials/footer') %>
+        <%- include('partials/landing/footer') %>
+        <script src="/assets/js/landing.js"></script>
 
             <script>
-                const sessionId = "<%= session_id %>";
-                const userEmail = "<%= orderDetails.email || '' %>";
-
-                let pluginKey = null;
+                const orderId = "<%= order_id %>";
 
                 // ── Polling for key ──
                 async function poll() {
                     try {
-                        const res = await fetch(`/api/check-key?session_id=${sessionId}`);
+                        const res = await fetch(`/api/check-key?order_id=${orderId}`);
                         const data = await res.json();
 
                         if (data.status === 'ready') {
                             document.getElementById('sub-status').textContent = 'Your plugin is ready to download!';
 
-                            // Store key internally for portal redirect (not shown to user)
                             localStorage.setItem('qwint_litellm_key', data.key);
-                            pluginKey = data.key;
 
                             // Hide spinner
                             document.getElementById('loading-wrap').style.display = 'none';
@@ -312,25 +135,15 @@
                             }
 
                             document.getElementById('actions').classList.add('visible');
+                        } else if (data.status === 'error') {
+                            document.getElementById('sub-status').textContent = data.message || 'Payment completed, but setup is delayed. Please contact support.';
+                            document.getElementById('loading-wrap').style.display = 'none';
+                            document.getElementById('actions').classList.add('visible');
                         } else {
                             setTimeout(poll, 2500);
                         }
                     } catch (e) {
                         setTimeout(poll, 5000);
-                    }
-                }
-
-                // ── Billing portal ──
-                function openPortal(e) {
-                    if (e) e.preventDefault();
-                    const key = pluginKey;
-                    if (key) {
-                        window.location.href = `/billing/portal?key=${encodeURIComponent(key)}`;
-                    } else if (userEmail) {
-                        window.location.href = `/billing/portal-by-email?email=${encodeURIComponent(userEmail)}`;
-                    } else {
-                        const k = prompt('Enter your LiteLLM API key to access billing:');
-                        if (k) window.location.href = `/billing/portal?key=${encodeURIComponent(k.trim())}`;
                     }
                 }
 
