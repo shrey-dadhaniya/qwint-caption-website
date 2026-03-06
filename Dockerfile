@@ -23,6 +23,11 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application source
 COPY src/ ./src/
 COPY package.json ./
+COPY payment-config.example.json ./payment-config.example.json
+
+# Seed runtime payment config from the committed example.
+# Deployments can override /app/payment-config.json via bind mount if needed.
+RUN cp payment-config.example.json payment-config.json
 
 # Create the downloads directory and debug log file, then set correct ownership
 # (generated plugin zips and local logs are written here at runtime)

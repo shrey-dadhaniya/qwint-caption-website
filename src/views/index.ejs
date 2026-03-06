@@ -34,13 +34,6 @@
                     </svg>
                     Download Plugin Free
                 </a>
-                <a href="#demo" class="btn btn-ghost btn-lg" id="hero-demo-btn">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <circle cx="10" cy="10" r="8" stroke="#A259FF" stroke-width="2" />
-                        <path d="M8 7l6 3-6 3V7z" fill="#A259FF" />
-                    </svg>
-                    Watch 20s Demo
-                </a>
             </div>
             <p class="hero-no-signup">No signup required &nbsp;·&nbsp; 1-minute free trial included</p>
             <div class="hero-social-proof">
@@ -94,114 +87,12 @@
                 </div>
             </div>
 
-            <!-- HERO VISUAL: Premiere UI Mockup -->
+            <!-- HERO VISUAL: Product Demo Video -->
             <div class="hero-visual">
-                <div class="premiere-mockup">
-                    <div class="premiere-titlebar">
-                        <div class="titlebar-dots">
-                            <span class="dot dot-red"></span>
-                            <span class="dot dot-yellow"></span>
-                            <span class="dot dot-green"></span>
-                        </div>
-                        <span class="titlebar-title">Adobe Premiere Pro — Qwint Caption</span>
-                    </div>
-                    <div class="premiere-body">
-                        <div class="premiere-panel premiere-preview">
-                            <div class="video-preview">
-                                <div class="video-frame">
-                                    <div class="video-scene">
-                                        <div class="video-person">
-                                            <div class="person-head"></div>
-                                            <div class="person-body"></div>
-                                        </div>
-                                        <div class="caption-overlay" id="captionOverlay">
-                                            <div class="caption-line active" id="cap1">"This is how AI auto-generates
-                                                your captions..."</div>
-                                            <div class="caption-line" id="cap2">"...directly inside Adobe Premiere Pro."
-                                            </div>
-                                            <div class="caption-line" id="cap3">"Save hours. Zero manual typing."</div>
-                                        </div>
-                                        <div class="caption-cursor" id="captionCursor"></div>
-                                    </div>
-                                </div>
-                                <div class="video-controls">
-                                    <div class="vc-btn vc-play">▶</div>
-                                    <div class="vc-timeline">
-                                        <div class="vc-progress" id="vcProgress"></div>
-                                    </div>
-                                    <div class="vc-time">0:42 / 2:30</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="premiere-panel premiere-plugin-panel">
-                            <div class="plugin-header">
-                                <div class="plugin-logo-small">
-                                    <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
-                                        <rect width="28" height="28" rx="7" fill="url(#lg2)" />
-                                        <path d="M7 10h14M7 14h10M7 18h7" stroke="#fff" stroke-width="2.2"
-                                            stroke-linecap="round" />
-                                        <defs>
-                                            <linearGradient id="lg2" x1="0" y1="0" x2="28" y2="28">
-                                                <stop stop-color="#6A00FF" />
-                                                <stop offset="1" stop-color="#A259FF" />
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
-                                </div>
-                                <span class="plugin-name">Qwint Caption</span>
-                                <span class="plugin-badge-ai">AI</span>
-                            </div>
-                            <div class="plugin-body">
-                                <div class="plugin-section-label">Language</div>
-                                <div class="plugin-select">English (Auto-detect) ▾</div>
-                                <div class="plugin-section-label">Caption Style</div>
-                                <div class="plugin-style-row">
-                                    <div class="style-chip active">Standard</div>
-                                    <div class="style-chip">Reels</div>
-                                    <div class="style-chip">Bold</div>
-                                </div>
-                                <div class="plugin-section-label">Generate For</div>
-                                <div class="plugin-select">Entire Timeline ▾</div>
-                                <button class="plugin-generate-btn" id="generateBtn" onclick="animateGenerate()">
-                                    <span class="generate-spinner" id="generateSpinner"></span>
-                                    <span id="generateBtnText">✦ Generate Captions</span>
-                                </button>
-                                <div class="plugin-status" id="pluginStatus">
-                                    <div class="status-line"><span class="status-dot status-done"></span> Transcribing
-                                        audio...</div>
-                                    <div class="status-line"><span class="status-dot status-done"></span> Generating
-                                        captions...</div>
-                                    <div class="status-line status-active"><span
-                                            class="status-dot status-active-dot"></span> Placing on timeline...</div>
-                                </div>
-                                <div class="plugin-credits-bar">
-                                    <span class="credits-label">Credits remaining</span>
-                                    <span class="credits-value">28 min</span>
-                                </div>
-                                <div class="credits-bar-track">
-                                    <div class="credits-bar-fill"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="premiere-timeline">
-                        <div class="timeline-label">Timeline</div>
-                        <div class="timeline-tracks">
-                            <div class="track track-v1">
-                                <div class="clip clip-video"></div>
-                                <div class="clip clip-video clip-short"></div>
-                            </div>
-                            <div class="track track-a1">
-                                <div class="clip clip-audio"></div>
-                            </div>
-                            <div class="track track-captions">
-                                <div class="caption-clip" id="cc1">Caption</div>
-                                <div class="caption-clip" id="cc2">Caption</div>
-                                <div class="caption-clip" id="cc3">Caption</div>
-                                <div class="caption-clip generating" id="cc4">Generating...</div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="hero-video-shell">
+                    <video class="hero-video" autoplay muted loop playsinline preload="metadata" controls>
+                        <source src="/assets/videos/qwint-caption-demo.mp4" type="video/mp4" />
+                    </video>
                 </div>
                 <div class="mockup-glow"></div>
             </div>
@@ -401,7 +292,7 @@
     </section>
 
     <!-- ===== DEMO VIDEO ===== -->
-    <section class="section demo-section" id="demo">
+    <section class="section demo-section" id="demo" style="display:none;">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">See It In Action</span>
@@ -598,7 +489,7 @@
                     <p>Join 2,000+ video editors who've cut caption time to zero. Download free — your first minute of
                         captions is on us.</p>
                     <div class="final-email-capture">
-                        <input type="email" id="emailInput" placeholder="Enter your email" class="email-input" />
+                        <input type="text" id="contactInput" placeholder="Enter your email or phone" class="email-input" />
                         <button class="btn btn-primary btn-lg" id="final-download-btn" onclick="handleDownload()">
                             Download Plugin Free
                         </button>

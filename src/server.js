@@ -403,8 +403,21 @@ function normalizePhone(phone) {
     return value || null;
 }
 
+function normalizeIndianPhone(phone) {
+    const digits = normalizePhone(phone);
+    if (!digits) return null;
+    if (/^[6-9]\d{9}$/.test(digits)) return digits;
+    if (/^0[6-9]\d{9}$/.test(digits)) return digits.slice(1);
+    if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+    return null;
+}
+
 function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '');
+}
+
+function isValidPhone(phone) {
+    return !!normalizeIndianPhone(phone);
 }
 
 function extractCustomerItems(payload) {
@@ -420,9 +433,15 @@ async function findRazorpayCustomerByEmail(email) {
 }
 
 async function findRazorpayCustomerByContact(contact) {
+    const targetIndian = normalizeIndianPhone(contact);
+    const targetAny = normalizePhone(contact);
     const response = await razorpay.get('/customers', { params: { count: 100, skip: 0 } });
     const items = extractCustomerItems(response.data);
-    return items.find((item) => normalizePhone(item.contact) === normalizePhone(contact)) || null;
+    return items.find((item) => {
+        const itemIndian = normalizeIndianPhone(item.contact);
+        if (targetIndian && itemIndian) return itemIndian === targetIndian;
+        return normalizePhone(item.contact) === targetAny;
+    }) || null;
 }
 
 async function upsertRazorpayCustomerByEmail(email) {
@@ -439,6 +458,35 @@ async function upsertRazorpayCustomerByEmail(email) {
         return created.data;
     } catch (err) {
         const existing = await findRazorpayCustomerByEmail(email);
+        if (existing) return existing;
+
+        const detail =
+            err?.response?.data?.error?.description ||
+            err?.response?.data?.error?.reason ||
+            err?.response?.data?.error?.code ||
+            err.message;
+        throw new Error(`Unable to create/find Razorpay customer: ${detail}`);
+    }
+}
+
+async function upsertRazorpayCustomerByContact(contact) {
+    const safeContact = normalizeIndianPhone(contact);
+    if (!safeContact) {
+        throw new Error('A valid Indian phone number is required');
+    }
+    const displayName = `free_${safeContact}`.slice(0, 48);
+    try {
+        const created = await razorpay.post('/customers', {
+            name: displayName,
+            contact: safeContact,
+            notes: {
+                flow_type: 'free_download'
+            },
+            fail_existing: '0'
+        });
+        return created.data;
+    } catch (err) {
+        const existing = await findRazorpayCustomerByContact(safeContact);
         if (existing) return existing;
 
         const detail =
@@ -553,7 +601,7 @@ async function upsertRazorpayCustomerFromPayment(payment, orderContext) {
     };
 }
 
-async function createFreeLiteLlmKey({ email, razorpayCustomerId }) {
+async function createFreeLiteLlmKey({ email, phone, razorpayCustomerId }) {
     const free = runtimeConfig.free_download;
     const customerIdField = free.metadata_customer_id_field || 'razorpay_customer_id';
     const alias = `free_${razorpayCustomerId}_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`;
@@ -567,7 +615,8 @@ async function createFreeLiteLlmKey({ email, razorpayCustomerId }) {
         metadata: {
             [customerIdField]: razorpayCustomerId,
             razorpay_customer_id: razorpayCustomerId,
-            email,
+            email: email || '',
+            phone: phone || '',
             available_budget: free.metadata_available_budget,
             ...free.metadata
         }
@@ -1219,26 +1268,36 @@ app.get('/success', (req, res) => {
 
 app.post('/api/free-download', async (req, res) => {
     const email = normalizeEmail(req.body?.email);
-    if (!email || !isValidEmail(email)) {
-        return res.status(400).json({ error: 'A valid email is required' });
+    const phone = normalizeIndianPhone(req.body?.phone);
+    const hasValidEmail = !!email && isValidEmail(email);
+    const hasValidPhone = !!phone && isValidPhone(phone);
+
+    if (!hasValidEmail && !hasValidPhone) {
+        return res.status(400).json({ error: 'Provide a valid email or Indian phone number' });
     }
 
     try {
         ensureFlowProvidersConfigured();
 
-        const customer = await upsertRazorpayCustomerByEmail(email);
+        const customer = hasValidEmail
+            ? await upsertRazorpayCustomerByEmail(email)
+            : await upsertRazorpayCustomerByContact(phone);
         const key = await createFreeLiteLlmKey({
-            email,
+            email: hasValidEmail ? email : null,
+            phone: hasValidPhone ? phone : null,
             razorpayCustomerId: customer.id
         });
         const downloadUrl = generatePluginZipForKey(key);
 
-        await updateRazorpayCustomerNotes(customer, {
+        const notesPatch = {
             litellm_key: key,
             plugin_zip_url: downloadUrl,
-            email,
             flow_type: 'free_download'
-        });
+        };
+        if (hasValidEmail) notesPatch.email = email;
+        if (hasValidPhone) notesPatch.phone = phone;
+
+        await updateRazorpayCustomerNotes(customer, notesPatch);
 
         return res.json({
             ok: true,

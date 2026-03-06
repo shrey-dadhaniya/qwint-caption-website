@@ -243,20 +243,46 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-async function handleDownload() {
-  const input = document.getElementById('emailInput');
-  const btn = document.getElementById('final-download-btn');
-  if (!input || !btn) return;
+function normalizePhone(phone) {
+  return String(phone || '').replace(/[^\d]/g, '').trim();
+}
 
-  const email = input.value.trim();
-  if (!email || !isValidEmail(email)) {
-    input.style.borderColor = '#ff5f57';
-    input.placeholder = 'Enter a valid email to continue';
-    input.focus();
-    setTimeout(() => {
-      input.style.borderColor = '';
-      input.placeholder = 'Enter your email';
-    }, 2000);
+function normalizeIndianPhone(phone) {
+  const digits = normalizePhone(phone);
+  if (!digits) return null;
+  if (/^[6-9]\d{9}$/.test(digits)) return digits;
+  if (/^0[6-9]\d{9}$/.test(digits)) return digits.slice(1);
+  if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+  return null;
+}
+
+function isValidPhone(phone) {
+  return !!normalizeIndianPhone(phone);
+}
+
+function markFieldInvalid(input, invalidPlaceholder, originalPlaceholder) {
+  if (!input) return;
+  input.style.borderColor = '#ff5f57';
+  if (invalidPlaceholder) input.placeholder = invalidPlaceholder;
+  setTimeout(() => {
+    input.style.borderColor = '';
+    if (originalPlaceholder) input.placeholder = originalPlaceholder;
+  }, 2000);
+}
+
+async function handleDownload() {
+  const contactInput = document.getElementById('contactInput');
+  const btn = document.getElementById('final-download-btn');
+  if (!contactInput || !btn) return;
+
+  const raw = contactInput.value.trim();
+  const normalizedPhone = normalizeIndianPhone(raw);
+  const validEmail = !!raw && isValidEmail(raw);
+  const validPhone = !!normalizedPhone && isValidPhone(raw);
+
+  if (!validEmail && !validPhone) {
+    markFieldInvalid(contactInput, 'Enter valid email or Indian phone', 'Enter your email or phone');
+    contactInput.focus();
     return;
   }
 
@@ -269,7 +295,10 @@ async function handleDownload() {
     const response = await fetch('/api/free-download', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({
+        email: validEmail ? raw : null,
+        phone: validPhone ? normalizedPhone : null
+      })
     });
 
     const data = await response.json();
@@ -288,7 +317,7 @@ async function handleDownload() {
     link.click();
     link.remove();
 
-    input.value = '';
+    contactInput.value = '';
     btn.textContent = 'Download started';
 
     setTimeout(() => {

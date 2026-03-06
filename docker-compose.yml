@@ -15,7 +15,7 @@ services:
     # ── Environment Variables ──────────────────────────────────────
     # Do NOT commit your real .env file.
     # In Coolify: set each variable via the "Environment Variables" UI tab.
-    # Locally: create a .env file (see example.env for the required keys).
+    # Locally: create a .env file (see .env.example or example.env for required keys).
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
@@ -28,7 +28,9 @@ services:
     # ── Volumes ────────────────────────────────────────────────────
     # Persist generated plugin zips across container restarts.
     # Without this, every redeploy would wipe existing download links.
+    # For local custom pricing, replace payment-config.example.json with payment-config.json.
     volumes:
+      - ./payment-config.example.json:/app/payment-config.json:ro
       - plugin_downloads:/app/src/public/downloads
 
     # ── Health check ───────────────────────────────────────────────

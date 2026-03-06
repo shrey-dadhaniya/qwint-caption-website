@@ -486,6 +486,23 @@ body {
   pointer-events: none;
 }
 
+.hero-video-shell {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #080812;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(106, 0, 255, 0.24);
+}
+
+.hero-video {
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
 .premiere-mockup {
   background: #1a1a24;
   border-radius: 12px;
@@ -1808,8 +1825,12 @@ blockquote::before {
 .final-email-capture {
   display: flex;
   gap: 12px;
-  max-width: 520px;
+  max-width: 560px;
   margin: 0 auto 20px;
+}
+
+.final-email-capture .btn {
+  justify-content: center;
 }
 
 .email-input {
@@ -2081,6 +2102,10 @@ blockquote::before {
     flex-direction: column;
   }
 
+  .final-email-capture .btn {
+    width: 100%;
+  }
+
   .footer-top {
     grid-template-columns: 1fr;
     gap: 32px;
@@ -2096,7 +2121,8 @@ blockquote::before {
   }
 
   .hero-visual {
-    display: none;
+    display: block;
+    margin-top: 12px;
   }
 
   .hero-social-proof {
