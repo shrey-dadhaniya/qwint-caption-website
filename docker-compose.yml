@@ -4,18 +4,14 @@ services:
       context: .
       dockerfile: Dockerfile
 
-    # Coolify will map this to its reverse-proxy (Traefik) automatically.
-    # Keep 3000 as the internal port — Coolify handles SSL termination externally.
+    # Map the host port and container port dynamically
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
 
     # Restart the container automatically unless explicitly stopped
     restart: unless-stopped
 
     # ── Environment Variables ──────────────────────────────────────
-    # Do NOT commit your real .env file.
-    # In Coolify: set each variable via the "Environment Variables" UI tab.
-    # Locally: create a .env file (see .env.example or example.env for required keys).
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
@@ -26,21 +22,19 @@ services:
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
 
     # ── Volumes ────────────────────────────────────────────────────
-    # Persist generated plugin zips across container restarts.
-    # Without this, every redeploy would wipe existing download links.
-    # For local custom pricing, replace payment-config.example.json with payment-config.json.
     volumes:
       - ./payment-config.example.json:/app/payment-config.json:ro
       - plugin_downloads:/app/src/public/downloads
 
     # ── Health check ───────────────────────────────────────────────
+    # Uses the same PORT variable to ensure internal connectivity checks pass
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:${PORT:-3000}/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
 
-# Named volume so Coolify can manage it independently of the container
+# Named volume managed by Coolify/Docker
 volumes:
   plugin_downloads:
