@@ -1,4 +1,9 @@
 {
+  "enabled_products": [
+    "a",
+    "b",
+    "c"
+  ],
   "payment_gateway": {
     "provider": "razorpay",
     "currency": "INR",
@@ -46,33 +51,6 @@
   },
   "products": [
     {
-      "id": "a",
-      "name": "Starter Pack",
-      "tagline": "BEST ENTRY",
-      "description": "The perfect way to get started. Credits never expire, but once you use all 60 minutes, the pack will be exhausted.",
-      "amount_inr": 249,
-      "tax_note": "+ Tax",
-      "credits_minutes": 60,
-      "benefits": [
-        "60 Minutes Credits",
-        "Credits never expire",
-        "One-time payment"
-      ],
-      "litellm": {
-        "team_id": "qwint-caption",
-        "key_type": "llm_api",
-        "models": [
-          "gemini/gemini-2.5-flash"
-        ],
-        "key_budget": 10,
-        "metadata_available_budget": 3600,
-        "metadata": {
-          "plan_code": "A",
-          "plan_name": "Starter Pack"
-        }
-      }
-    },
-    {
       "id": "b",
       "name": "Lite Pack",
       "tagline": "Lite Pack",
@@ -96,6 +74,33 @@
         "metadata": {
           "plan_code": "B",
           "plan_name": "Lite Pack"
+        }
+      }
+    },
+    {
+      "id": "a",
+      "name": "Starter Pack",
+      "tagline": "BEST ENTRY",
+      "description": "The perfect way to get started. Credits never expire, but once you use all 60 minutes, the pack will be exhausted.",
+      "amount_inr": 249,
+      "tax_note": "+ Tax",
+      "credits_minutes": 60,
+      "benefits": [
+        "60 Minutes Credits",
+        "Credits never expire",
+        "One-time payment"
+      ],
+      "litellm": {
+        "team_id": "qwint-caption",
+        "key_type": "llm_api",
+        "models": [
+          "gemini/gemini-2.5-flash"
+        ],
+        "key_budget": 10,
+        "metadata_available_budget": 3600,
+        "metadata": {
+          "plan_code": "A",
+          "plan_name": "Starter Pack"
         }
       }
     },

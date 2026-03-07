@@ -184,6 +184,18 @@ function loadRuntimeConfig() {
             }
         };
 
+        // ── Filter by enabled_products ────────────────────────────────────────
+        // If enabled_products is present in config, only those product IDs are
+        // shown on the website and available for checkout.
+        const allProducts = toProductsArray(parsed.products);
+        const enabledIds = Array.isArray(parsed.enabled_products)
+            ? parsed.enabled_products.map(String).filter(Boolean)
+            : null; // null = no filter, all products shown
+
+        const products = enabledIds && enabledIds.length > 0
+            ? allProducts.filter((p) => enabledIds.includes(p.id))
+            : allProducts;
+
         return {
             free_download: normalizedFreeDownload,
             litellm_key_details: {
@@ -226,7 +238,8 @@ function loadRuntimeConfig() {
                 description: String(gateway.description || DEFAULT_PAYMENT_GATEWAY_CONFIG.description),
                 theme_color: String(gateway.theme_color || DEFAULT_PAYMENT_GATEWAY_CONFIG.theme_color)
             },
-            products: toProductsArray(parsed.products)
+            products,
+            enabledProductIds: enabledIds || allProducts.map((p) => p.id)
         };
     } catch (err) {
         logWarn('[server] Could not parse payment-config.json, using defaults', { error: err.message });
@@ -241,7 +254,9 @@ function loadRuntimeConfig() {
 }
 
 const runtimeConfig = loadRuntimeConfig();
+// productsById is built from the FILTERED list — disabled products can never be checked out
 const productsById = new Map(runtimeConfig.products.map((p) => [p.id, p]));
+logInfo('[config] products enabled', { ids: runtimeConfig.products.map((p) => p.id) });
 
 const litellm = axios.create({
     baseURL: process.env.LITELLM_URL,
