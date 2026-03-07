@@ -1773,7 +1773,10 @@ app.use(helmet({
                 'https://www.googletagmanager.com',
                 'https://connect.facebook.net',
                 'https://www.clarity.ms',
-                'https://static.cloudflareinsights.com'
+                'https://scripts.clarity.ms',
+                'https://static.cloudflareinsights.com',
+                'https://www.google.com',
+                'https://www.gstatic.com'
             ],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
