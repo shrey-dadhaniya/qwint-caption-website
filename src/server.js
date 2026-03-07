@@ -10,6 +10,18 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { unzipSync, zipSync, strFromU8, strToU8 } = require('fflate');
+const { logDebug, logInfo, logWarn, logError, morganStream } = require('./utils/logger');
+
+// ── Global crash guard ──────────────────────────────────────────────────
+// Without these, any unhandled exception/rejection kills the process silently.
+// cloudflared then sees an EOF (TCP close with no HTTP response) and retries.
+process.on('uncaughtException', (err) => {
+    logError('[process] uncaughtException — server is still running', err);
+});
+process.on('unhandledRejection', (reason) => {
+    const err = reason instanceof Error ? reason : new Error(String(reason));
+    logError('[process] unhandledRejection — server is still running', err);
+});
 
 const app = express();
 
@@ -217,7 +229,7 @@ function loadRuntimeConfig() {
             products: toProductsArray(parsed.products)
         };
     } catch (err) {
-        console.warn('[server] Could not parse payment-config.json, using defaults:', err.message);
+        logWarn('[server] Could not parse payment-config.json, using defaults', { error: err.message });
         return {
             free_download: DEFAULT_FREE_DOWNLOAD_CONFIG,
             litellm_key_details: DEFAULT_LITELLM_KEY_DETAILS,
@@ -250,6 +262,129 @@ const pendingOrders = new Map();
 const fulfillmentByOrder = new Map();
 const processedPaymentIds = new Set();
 const ORDER_STATE_TTL_MS = 24 * 60 * 60 * 1000;
+const ORDER_STATE_DIR = path.join(__dirname, 'private', 'runtime');
+const ORDER_STATE_FILE = path.join(ORDER_STATE_DIR, 'payment-state.json');
+const ORDER_STATE_WRITE_DEBOUNCE_MS = 250;
+const RAZORPAY_WEBHOOK_PATH = '/api/webhooks/razorpay';
+let orderStateWriteTimer = null;
+
+// ── Fulfilled Orders — simple JSON file keyed by orderId ─────────────────────
+// This is the single source of truth for paid_checkout fulfillment status.
+// Webhook writes here once fulfillment is done; check-key reads from here.
+const FULFILLED_ORDERS_FILE = path.join(
+    path.join(__dirname, 'private', 'runtime'),
+    'fulfilled-orders.json'
+);
+let fulfilledOrders = {}; // { [orderId]: { key, zipUrl, customerId, paymentId, completedAt } }
+
+function loadFulfilledOrders() {
+    try {
+        if (!fs.existsSync(FULFILLED_ORDERS_FILE)) return;
+        const raw = fs.readFileSync(FULFILLED_ORDERS_FILE, 'utf8');
+        fulfilledOrders = raw ? (JSON.parse(raw) || {}) : {};
+        logInfo('[fulfilled-orders] loaded from disk', { count: Object.keys(fulfilledOrders).length });
+    } catch (err) {
+        logError('[fulfilled-orders] load failed', err);
+    }
+}
+
+function saveFulfilledOrder(orderId, data) {
+    fulfilledOrders[String(orderId)] = { ...data, savedAt: new Date().toISOString() };
+    try {
+        const dir = path.join(__dirname, 'private', 'runtime');
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(FULFILLED_ORDERS_FILE, JSON.stringify(fulfilledOrders, null, 2), 'utf8');
+        logDebug('[fulfilled-orders] saved to disk', { orderId });
+    } catch (err) {
+        logError('[fulfilled-orders] save failed', err);
+    }
+}
+
+function getFulfilledOrder(orderId) {
+    return fulfilledOrders[String(orderId)] || null;
+}
+
+function persistOrderStateNow() {
+    try {
+        fs.mkdirSync(ORDER_STATE_DIR, { recursive: true });
+        const payload = {
+            version: 1,
+            saved_at: new Date().toISOString(),
+            pendingOrders: Array.from(pendingOrders.entries()),
+            fulfillmentByOrder: Array.from(fulfillmentByOrder.entries()),
+            processedPaymentIds: Array.from(processedPaymentIds.values())
+        };
+        fs.writeFileSync(ORDER_STATE_FILE, JSON.stringify(payload), 'utf8');
+        logDebug('[order-state] persisted to disk');
+    } catch (err) {
+        logError('[order-state] persist failed', err);
+    }
+}
+
+function persistOrderStateSoon() {
+    if (orderStateWriteTimer) return;
+    orderStateWriteTimer = setTimeout(() => {
+        orderStateWriteTimer = null;
+        persistOrderStateNow();
+    }, ORDER_STATE_WRITE_DEBOUNCE_MS);
+    if (typeof orderStateWriteTimer.unref === 'function') {
+        orderStateWriteTimer.unref();
+    }
+}
+
+function loadPersistedOrderState() {
+    try {
+        if (!fs.existsSync(ORDER_STATE_FILE)) return;
+        const raw = fs.readFileSync(ORDER_STATE_FILE, 'utf8');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+
+        if (Array.isArray(parsed.pendingOrders)) {
+            parsed.pendingOrders.forEach(([orderId, value]) => {
+                if (orderId && value) pendingOrders.set(String(orderId), value);
+            });
+        }
+
+        if (Array.isArray(parsed.fulfillmentByOrder)) {
+            parsed.fulfillmentByOrder.forEach(([orderId, value]) => {
+                if (orderId && value) fulfillmentByOrder.set(String(orderId), value);
+            });
+        }
+
+        if (Array.isArray(parsed.processedPaymentIds)) {
+            parsed.processedPaymentIds.forEach((paymentId) => {
+                if (paymentId) processedPaymentIds.add(String(paymentId));
+            });
+        }
+        logInfo('[order-state] loaded from disk', {
+            pendingOrders: pendingOrders.size,
+            fulfillments: fulfillmentByOrder.size,
+            processedPayments: processedPaymentIds.size
+        });
+    } catch (err) {
+        logError('[order-state] load failed', err);
+    }
+}
+
+function setPendingOrder(orderId, value) {
+    pendingOrders.set(String(orderId), value);
+    persistOrderStateSoon();
+}
+
+function addProcessedPaymentId(paymentId) {
+    const id = String(paymentId || '').trim();
+    if (!id) return false;
+    if (processedPaymentIds.has(id)) return false;
+    processedPaymentIds.add(id);
+    persistOrderStateSoon();
+    return true;
+}
+
+function hasProcessedPaymentId(paymentId) {
+    const id = String(paymentId || '').trim();
+    if (!id) return false;
+    return processedPaymentIds.has(id);
+}
 
 function ensureLiteLlmConfigured() {
     if (!process.env.LITELLM_URL || !process.env.LITELLM_MASTER_KEY) {
@@ -358,25 +493,48 @@ function markFulfillment(orderId, patch) {
         ...patch,
         updatedAt: nowMs()
     });
+    persistOrderStateSoon();
 }
 
 function cleanupOrderState() {
     const cutoff = nowMs() - ORDER_STATE_TTL_MS;
+    let changed = false;
 
     for (const [orderId, data] of pendingOrders.entries()) {
         if ((data.createdAt || 0) < cutoff) {
             pendingOrders.delete(orderId);
+            changed = true;
         }
     }
 
     for (const [orderId, data] of fulfillmentByOrder.entries()) {
         if ((data.updatedAt || data.createdAt || 0) < cutoff) {
             fulfillmentByOrder.delete(orderId);
+            changed = true;
         }
     }
+
+    for (const paymentId of processedPaymentIds.values()) {
+        if (!paymentId) {
+            processedPaymentIds.delete(paymentId);
+            changed = true;
+        }
+    }
+
+    if (changed) persistOrderStateSoon();
 }
 
+loadPersistedOrderState();
+loadFulfilledOrders();
+cleanupOrderState();
 setInterval(cleanupOrderState, 60 * 60 * 1000).unref();
+
+function timingSafeHexEqual(left, right) {
+    const a = Buffer.from(String(left || ''), 'utf8');
+    const b = Buffer.from(String(right || ''), 'utf8');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+}
 
 function verifyRazorpaySignature(orderId, paymentId, signature) {
     const payload = `${orderId}|${paymentId}`;
@@ -385,10 +543,17 @@ function verifyRazorpaySignature(orderId, paymentId, signature) {
         .update(payload)
         .digest('hex');
 
-    const sigA = Buffer.from(expected, 'utf8');
-    const sigB = Buffer.from(String(signature || ''), 'utf8');
-    if (sigA.length !== sigB.length) return false;
-    return crypto.timingSafeEqual(sigA, sigB);
+    return timingSafeHexEqual(expected, signature);
+}
+
+function verifyRazorpayWebhookSignature(rawBody, signature) {
+    const secret = String(process.env.RAZORPAY_WEBHOOK_SECRET || '').trim();
+    if (!secret) return false;
+    const expected = crypto
+        .createHmac('sha256', secret)
+        .update(rawBody || '')
+        .digest('hex');
+    return timingSafeHexEqual(expected, signature);
 }
 
 function normalizeEmail(email) {
@@ -424,6 +589,23 @@ function extractCustomerItems(payload) {
     if (Array.isArray(payload?.items)) return payload.items;
     if (Array.isArray(payload?.data)) return payload.data;
     return [];
+}
+
+function extractPaymentItems(payload) {
+    if (Array.isArray(payload?.items)) return payload.items;
+    if (Array.isArray(payload?.payments)) return payload.payments;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+}
+
+function normalizeRazorpayContact(contact) {
+    return normalizeIndianPhone(contact) || null;
+}
+
+function normalizeLiteLlmKey(value) {
+    const key = String(value || '').trim();
+    if (!key) return null;
+    return key.startsWith('sk-') ? key : null;
 }
 
 async function findRazorpayCustomerByEmail(email) {
@@ -525,31 +707,42 @@ async function updateRazorpayCustomerNotes(customer, notesPatch) {
 
 async function upsertRazorpayCustomerFromPayment(payment, orderContext) {
     const email = normalizeEmail(payment.email || orderContext?.emailHint || null);
-    const contact = normalizePhone(payment.contact || orderContext?.contactHint || null);
+    const contact = normalizeRazorpayContact(payment.contact || orderContext?.contactHint || null);
     const customerId = payment.customer_id || orderContext?.customerIdHint || null;
     const flowType = String(orderContext?.flowType || 'paid_checkout');
+    const litellmKey = normalizeLiteLlmKey(orderContext?.litellmKeyHint || null);
+
+    const baseNotes = {
+        flow_type: flowType,
+        product_id: orderContext?.productId || '',
+        last_order_id: orderContext?.orderId || '',
+        last_payment_id: payment.id || ''
+    };
+    if (litellmKey) baseNotes.litellm_key = litellmKey;
+
+    const updatePayloadFrom = (existing, nameFallback) => ({
+        name: (existing && existing.name) || nameFallback || `customer_${Date.now()}`,
+        email: email || (existing && normalizeEmail(existing.email)) || undefined,
+        contact: contact || (existing && normalizeRazorpayContact(existing.contact)) || undefined,
+        notes: {
+            ...((existing && existing.notes) || {}),
+            ...baseNotes
+        },
+        fail_existing: '0'
+    });
 
     if (customerId) {
         try {
             const existing = await razorpay.get(`/customers/${encodeURIComponent(customerId)}`);
             const customer = existing.data;
-            await razorpay.put(`/customers/${encodeURIComponent(customerId)}`, {
-                name: customer.name || `customer_${contact || email || customerId}`,
-                email: email || customer.email || undefined,
-                contact: contact || customer.contact || undefined,
-                notes: {
-                    ...(customer.notes || {}),
-                    flow_type: flowType,
-                    product_id: orderContext?.productId || '',
-                    last_order_id: orderContext?.orderId || '',
-                    last_payment_id: payment.id || ''
-                },
-                fail_existing: '0'
-            });
+            await razorpay.put(
+                `/customers/${encodeURIComponent(customerId)}`,
+                updatePayloadFrom(customer, `customer_${contact || email || customerId}`)
+            );
             return {
                 id: customerId,
                 email: email || customer.email || null,
-                contact: contact || customer.contact || null
+                contact: contact || normalizeRazorpayContact(customer.contact) || null
             };
         } catch (err) {
             // fall through to create/find by email/contact
@@ -561,43 +754,33 @@ async function upsertRazorpayCustomerFromPayment(payment, orderContext) {
     if (!existing && contact) existing = await findRazorpayCustomerByContact(contact);
 
     if (existing) {
-        await razorpay.put(`/customers/${encodeURIComponent(existing.id)}`, {
-            name: existing.name || `customer_${contact || email || existing.id}`,
-            email: email || existing.email || undefined,
-            contact: contact || existing.contact || undefined,
-            notes: {
-                ...(existing.notes || {}),
-                flow_type: flowType,
-                product_id: orderContext?.productId || '',
-                last_order_id: orderContext?.orderId || '',
-                last_payment_id: payment.id || ''
-            },
-            fail_existing: '0'
-        });
+        await razorpay.put(
+            `/customers/${encodeURIComponent(existing.id)}`,
+            updatePayloadFrom(existing, `customer_${contact || email || existing.id}`)
+        );
         return {
             id: existing.id,
             email: email || existing.email || null,
-            contact: contact || existing.contact || null
+            contact: contact || normalizeRazorpayContact(existing.contact) || null
         };
+    }
+
+    if (!email && !contact) {
+        throw new Error('Razorpay payment is missing email and phone; cannot create customer');
     }
 
     const createResp = await razorpay.post('/customers', {
         name: `customer_${contact || (email || 'guest').split('@')[0]}`,
         email: email || undefined,
         contact: contact || undefined,
-        notes: {
-            flow_type: flowType,
-            product_id: orderContext?.productId || '',
-            last_order_id: orderContext?.orderId || '',
-            last_payment_id: payment.id || ''
-        },
+        notes: baseNotes,
         fail_existing: '0'
     });
 
     return {
         id: createResp.data.id,
         email: email || createResp.data.email || null,
-        contact: contact || createResp.data.contact || null
+        contact: contact || normalizeRazorpayContact(createResp.data.contact) || null
     };
 }
 
@@ -651,7 +834,7 @@ async function createRazorpayOrderForProduct(productId, options = {}) {
     });
 
     const order = response.data;
-    pendingOrders.set(order.id, {
+    setPendingOrder(order.id, {
         orderId: order.id,
         productId: product.id,
         amountPaise,
@@ -681,68 +864,498 @@ async function capturePaymentIfNeeded(payment) {
     return captured.data;
 }
 
-async function processPaidFulfillment({ orderId, payment, customer }) {
-    const context = pendingOrders.get(orderId);
-    if (!context) throw new Error('Order context not found');
-    const product = getProductOrThrow(context.productId);
-    const plan = getLiteLlmPlanForProduct(product);
-    const metadataCustomerIdField =
-        runtimeConfig.litellm_key_details.metadata_customer_id_field ||
-        runtimeConfig.free_download.metadata_customer_id_field ||
-        'razorpay_customer_id';
-    const email = normalizeEmail(customer?.email || payment?.email || null);
-    const contact = normalizePhone(customer?.contact || payment?.contact || null);
+async function fetchRazorpayOrder(orderId) {
+    const id = String(orderId || '').trim();
+    if (!id) return null;
+    const response = await razorpay.get(`/orders/${encodeURIComponent(id)}`);
+    return response.data || null;
+}
 
+async function fetchRazorpayCustomer(customerId) {
+    const id = String(customerId || '').trim();
+    if (!id) return null;
+    const response = await razorpay.get(`/customers/${encodeURIComponent(id)}`);
+    return response.data || null;
+}
+
+async function fetchRazorpayPayment(paymentId) {
+    const id = String(paymentId || '').trim();
+    if (!id) return null;
+    const response = await razorpay.get(`/payments/${encodeURIComponent(id)}`);
+    return response.data || null;
+}
+
+async function fetchBestPaymentForOrder(orderId) {
+    const id = String(orderId || '').trim();
+    if (!id) return null;
+    const response = await razorpay.get(`/orders/${encodeURIComponent(id)}/payments`);
+    const items = extractPaymentItems(response.data)
+        .filter((p) => p && p.id)
+        .sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0));
+    const captured = items.find((p) => p.status === 'captured');
+    if (captured) return captured;
+    const authorized = items.find((p) => p.status === 'authorized');
+    return authorized || null;
+}
+
+async function ensureCapturedPayment({ orderId, paymentId }) {
+    let payment = null;
+    if (paymentId) {
+        payment = await fetchRazorpayPayment(paymentId);
+    } else {
+        payment = await fetchBestPaymentForOrder(orderId);
+    }
+
+    if (!payment) return null;
+    if (orderId && payment.order_id && String(payment.order_id) !== String(orderId)) {
+        throw new Error('Payment does not belong to this order');
+    }
+
+    payment = await capturePaymentIfNeeded(payment);
+    if (!payment || payment.status !== 'captured') return null;
+    return payment;
+}
+
+async function ensureOrderContext(orderId, hints = {}) {
+    const id = String(orderId || '').trim();
+    if (!id) return null;
+
+    const existing = pendingOrders.get(id);
+    if (existing) {
+        let changed = false;
+        const merged = { ...existing };
+
+        if (!merged.topupKey) {
+            const hintedKey = normalizeLiteLlmKey(hints.topupKey);
+            if (hintedKey) {
+                merged.topupKey = hintedKey;
+                changed = true;
+            }
+        }
+
+        const hintedCustomerId = String(hints.customerIdHint || '').trim();
+        if (!merged.existingCustomerId && hintedCustomerId) {
+            merged.existingCustomerId = hintedCustomerId;
+            changed = true;
+        }
+
+        const hintedEmail = normalizeEmail(hints.emailHint);
+        if (!merged.emailHint && hintedEmail) {
+            merged.emailHint = hintedEmail;
+            changed = true;
+        }
+
+        const hintedContact = normalizeRazorpayContact(hints.contactHint);
+        if (!merged.contactHint && hintedContact) {
+            merged.contactHint = hintedContact;
+            changed = true;
+        }
+
+        if (changed) setPendingOrder(id, merged);
+        return changed ? merged : existing;
+    }
+
+    const order = await fetchRazorpayOrder(id);
+    if (!order) return null;
+    const flowType = String(order.notes?.flow_type || hints.flowType || 'paid_checkout');
+    const productId = String(order.notes?.product_id || hints.productId || '').trim();
+
+    if (!productId || !productsById.has(productId)) {
+        throw new Error('Order product is missing or invalid');
+    }
+
+    const restored = {
+        orderId: id,
+        productId,
+        amountPaise: toNumber(order.amount, 0),
+        currency: String(order.currency || runtimeConfig.payment_gateway.currency || 'INR').toUpperCase(),
+        flowType,
+        createdAt: nowMs(),
+        topupKey: normalizeLiteLlmKey(hints.topupKey || order.notes?.litellm_key),
+        existingCustomerId: String(hints.customerIdHint || '').trim() || null,
+        contactHint: normalizeRazorpayContact(hints.contactHint),
+        emailHint: normalizeEmail(hints.emailHint)
+    };
+
+    setPendingOrder(id, restored);
+
+    if (!fulfillmentByOrder.has(id)) {
+        markFulfillment(id, {
+            status: 'awaiting_payment',
+            orderId: id,
+            productId,
+            flowType,
+            createdAt: nowMs()
+        });
+    }
+
+    return restored;
+}
+
+async function resolveTopupKey({ context, payment, topupKeyHint }) {
+    const direct = normalizeLiteLlmKey(topupKeyHint || context?.topupKey);
+    if (direct) return direct;
+
+    const customerId = String(
+        payment?.customer_id ||
+        context?.existingCustomerId ||
+        ''
+    ).trim();
+
+    if (!customerId) return null;
+
+    try {
+        const customer = await fetchRazorpayCustomer(customerId);
+        return normalizeLiteLlmKey(customer?.notes?.litellm_key || null);
+    } catch (_) {
+        return null;
+    }
+}
+
+async function restoreReadyStateFromArtifacts({ orderId, flowType, payment, context, topupKeyHint }) {
+    const customerId = String(payment?.customer_id || context?.existingCustomerId || '').trim() || null;
+    const customer = customerId ? await fetchRazorpayCustomer(customerId).catch(() => null) : null;
+    const customerNotes = (customer && customer.notes) || {};
+    const customerPhone = normalizeRazorpayContact(customer?.contact || null);
+
+    if (flowType === 'paid_checkout') {
+        const noteOrderId = String(customerNotes.order_id || '').trim();
+        const key = normalizeLiteLlmKey(customerNotes.litellm_key || null);
+        const pluginUrl = String(customerNotes.plugin_zip_url || '').trim() || null;
+
+        if (noteOrderId === String(orderId) && key && pluginUrl) {
+            markFulfillment(orderId, {
+                status: 'ready',
+                flowType: 'paid_checkout',
+                key,
+                pluginUrl,
+                paymentId: payment?.id || null,
+                customerId,
+                phone: customerPhone,
+                completedAt: nowMs()
+            });
+            return true;
+        }
+        return false;
+    }
+
+    if (flowType !== 'account_topup') return false;
+
+    const key = normalizeLiteLlmKey(topupKeyHint || context?.topupKey || customerNotes.litellm_key || null);
+    if (!key) return false;
+
+    try {
+        const keyInfo = await getLiteLlmKeyInfo(key);
+        const metadata = keyInfo.metadata || {};
+        const metadataOrderId = String(metadata.last_topup_order_id || '').trim();
+        const metadataPaymentId = String(metadata.last_topup_payment_id || '').trim();
+
+        if (
+            metadataOrderId === String(orderId) ||
+            (payment?.id && metadataPaymentId && metadataPaymentId === String(payment.id))
+        ) {
+            markFulfillment(orderId, {
+                status: 'ready',
+                flowType: 'account_topup',
+                key,
+                paymentId: payment?.id || null,
+                customerId: getOrderContextCustomerId(metadata) || customerId || null,
+                phone: normalizeRazorpayContact(metadata.phone || metadata.contact || customerPhone || null),
+                availableBudget: keyInfo.availableBudget,
+                keyInfo: {
+                    available_budget: keyInfo.availableBudget,
+                    customer_id: getOrderContextCustomerId(metadata),
+                    phone: normalizeRazorpayContact(metadata.phone || metadata.contact || null),
+                    email: normalizeEmail(metadata.email || null)
+                },
+                completedAt: nowMs()
+            });
+            return true;
+        }
+    } catch (_) {
+        return false;
+    }
+
+    return false;
+}
+
+async function enqueueFulfillmentForPayment({
+    orderId,
+    payment,
+    expectedFlow = null,
+    topupKeyHint = null,
+    emailHint = null,
+    contactHint = null
+}) {
+    const context = await ensureOrderContext(orderId, {
+        customerIdHint: payment?.customer_id || null,
+        topupKey: topupKeyHint,
+        emailHint,
+        contactHint
+    });
+    if (!context) throw new Error('Order context not found');
+
+    const flowType = String(context.flowType || 'paid_checkout');
+    if (expectedFlow && flowType !== expectedFlow) {
+        throw new Error(`Order flow mismatch: expected ${expectedFlow}, received ${flowType}`);
+    }
+
+    let resolvedTopupKey = null;
+    if (flowType === 'account_topup') {
+        resolvedTopupKey = await resolveTopupKey({
+            context,
+            payment,
+            topupKeyHint
+        });
+        if (!resolvedTopupKey) {
+            throw new Error('Top-up key is missing for this account order');
+        }
+        if (!context.topupKey || context.topupKey !== resolvedTopupKey) {
+            setPendingOrder(orderId, {
+                ...context,
+                topupKey: resolvedTopupKey
+            });
+        }
+    }
+
+    const existingState = fulfillmentByOrder.get(orderId);
+    if (hasProcessedPaymentId(payment.id)) {
+        await restoreReadyStateFromArtifacts({
+            orderId,
+            flowType,
+            payment,
+            context,
+            topupKeyHint: resolvedTopupKey
+        });
+        return { context, queued: false, flowType };
+    }
+    if (
+        existingState &&
+        existingState.status === 'processing' &&
+        String(existingState.paymentId || '') === String(payment.id || '')
+    ) {
+        // State is processing for this payment — it may be a stale in-memory state
+        // from a previous server run where the promise already died. Attempt to
+        // restore the ready state from Razorpay customer notes before giving up.
+        const restored = await restoreReadyStateFromArtifacts({
+            orderId,
+            flowType,
+            payment,
+            context,
+            topupKeyHint: resolvedTopupKey
+        });
+        if (restored) {
+            logInfo('[fulfillment] restored ready state from artifacts', { orderId, flowType });
+        } else {
+            logWarn('[fulfillment] processing state persisted but artifact restore failed', { orderId, flowType });
+        }
+        return { context, queued: false, flowType };
+    }
+
+    const customer = await upsertRazorpayCustomerFromPayment(payment, {
+        orderId,
+        productId: context.productId,
+        flowType,
+        emailHint: normalizeEmail(emailHint || context.emailHint || payment.email || null),
+        contactHint: normalizeRazorpayContact(contactHint || context.contactHint || payment.contact || null),
+        customerIdHint: payment.customer_id || context.existingCustomerId || null,
+        litellmKeyHint: flowType === 'account_topup' ? resolvedTopupKey : null
+    });
+
+    logInfo('[fulfillment] starting', { orderId, flowType, productId: context.productId, paymentId: payment.id, customerId: customer.id });
     markFulfillment(orderId, {
         status: 'processing',
-        productId: product.id,
+        flowType,
+        productId: context.productId,
         paymentId: payment.id,
         customerId: customer.id,
-        phone: contact
+        phone: customer.contact || null
     });
 
-    const alias = `paid_${product.id}_${customer.id}_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`;
-    const keyResp = await litellm.post('/key/generate', {
-        key_alias: alias,
-        max_budget: plan.key_budget,
-        team_id: plan.team_id,
-        models: plan.models,
-        key_type: plan.key_type,
-        metadata: {
-            [metadataCustomerIdField]: customer.id,
-            razorpay_customer_id: customer.id,
-            email: email || '',
-            phone: contact || '',
-            available_budget: plan.metadata_available_budget,
+    const onFulfillmentSuccess = () => {
+        addProcessedPaymentId(payment.id);
+    };
+
+    if (flowType === 'account_topup') {
+        logInfo('[account-fulfillment] queued', { orderId, paymentId: payment.id });
+        processAccountTopupFulfillment({ orderId, payment, customer })
+            .then(() => {
+                onFulfillmentSuccess();
+                logInfo('[account-fulfillment] completed', { orderId, paymentId: payment.id });
+            })
+            .catch((err) => {
+                logError('[account-fulfillment] failed', err);
+                markFulfillment(orderId, {
+                    status: 'error',
+                    flowType: 'account_topup',
+                    message: err.message || 'Fulfillment failed'
+                });
+            });
+        return { context, customer, queued: true, flowType };
+    }
+
+    logInfo('[fulfillment] queued', { orderId, paymentId: payment.id, flowType: 'paid_checkout' });
+    processPaidFulfillment({ orderId, payment, customer })
+        .then(() => {
+            onFulfillmentSuccess();
+            logInfo('[fulfillment] completed', { orderId, paymentId: payment.id });
+        })
+        .catch((err) => {
+            logError('[fulfillment] failed', err);
+            markFulfillment(orderId, {
+                status: 'error',
+                flowType: 'paid_checkout',
+                message: err.message || 'Fulfillment failed'
+            });
+        });
+
+    return { context, customer, queued: true, flowType };
+}
+
+async function recoverAndQueueFulfillment(orderId, options = {}) {
+    const payment = await ensureCapturedPayment({
+        orderId,
+        paymentId: options.paymentId || null
+    });
+    if (!payment) return null;
+
+    await enqueueFulfillmentForPayment({
+        orderId,
+        payment,
+        expectedFlow: options.expectedFlow || null,
+        topupKeyHint: options.topupKeyHint || null,
+        emailHint: options.emailHint || null,
+        contactHint: options.contactHint || null
+    });
+
+    return payment;
+}
+
+// ── doWebhookFulfillment — paid_checkout only ──────────────────────────
+// Called from the webhook handler (fire-and-forget, response already sent).
+// 1. Upsert Razorpay customer from payment details
+// 2. Generate LiteLLM key
+// 3. Generate plugin zip
+// 4. Save key + zipUrl to Razorpay customer notes
+// 5. Save to fulfilled-orders.json  ← what check-key reads
+async function doWebhookFulfillment(orderId, paymentId) {
+    try {
+        // ── Deduplication check ────────────────────────────────────────
+        if (getFulfilledOrder(orderId)) {
+            logInfo('[webhook-fulfillment] already fulfilled, skipping', { orderId });
+            return;
+        }
+        if (paymentId && hasProcessedPaymentId(paymentId)) {
+            logInfo('[webhook-fulfillment] payment already processed, skipping', { orderId, paymentId });
+            return;
+        }
+
+        // ── Ensure payment is captured ─────────────────────────────────
+        logInfo('[webhook-fulfillment] checking payment capture status', { orderId, paymentId });
+        const payment = await ensureCapturedPayment({ orderId, paymentId });
+        if (!payment) {
+            logWarn('[webhook-fulfillment] payment not captured yet — Razorpay will retry', { orderId, paymentId });
+            return;
+        }
+        logInfo('[webhook-fulfillment] payment confirmed captured', { orderId, paymentId: payment.id, amount: payment.amount });
+
+        // ── Get product from order notes (stored when /api/checkout created the order) ──
+        const context = await ensureOrderContext(orderId, {
+            customerIdHint: payment.customer_id || null,
+            emailHint: normalizeEmail(payment.email || null),
+            contactHint: normalizeRazorpayContact(payment.contact || null)
+        });
+        if (!context || !context.productId) {
+            logError('[webhook-fulfillment] could not resolve product for order', new Error('Product missing'), { orderId });
+            return;
+        }
+        if (context.flowType === 'account_topup') {
+            // Account topup — handled by the existing account topup flow, not here
+            logInfo('[webhook-fulfillment] account_topup order detected, skipping paid_checkout fulfillment', { orderId });
+            return;
+        }
+
+        const product = getProductOrThrow(context.productId);
+        logInfo('[webhook-fulfillment] product resolved', { orderId, productId: product.id, productName: product.name });
+
+        // ── Upsert Razorpay customer ───────────────────────────────────
+        const customer = await upsertRazorpayCustomerFromPayment(payment, {
+            orderId,
+            productId: product.id,
+            flowType: 'paid_checkout',
+            emailHint: normalizeEmail(context.emailHint || payment.email || null),
+            contactHint: normalizeRazorpayContact(context.contactHint || payment.contact || null),
+            customerIdHint: payment.customer_id || context.existingCustomerId || null
+        });
+        logInfo('[webhook-fulfillment] customer upserted', { orderId, customerId: customer.id });
+
+        // ── Generate LiteLLM key ──────────────────────────────────────
+        const plan = getLiteLlmPlanForProduct(product);
+        const metadataCustomerIdField = getMetadataCustomerIdField();
+        const email = normalizeEmail(customer.email || payment.email || null);
+        const phone = normalizeRazorpayContact(customer.contact || payment.contact || null);
+        const alias = `paid_${product.id}_${customer.id}_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`;
+
+        logInfo('[webhook-fulfillment] generating LiteLLM key', { orderId, productId: product.id, alias });
+        const keyResp = await litellm.post('/key/generate', {
+            key_alias: alias,
+            max_budget: plan.key_budget,
+            team_id: plan.team_id,
+            models: plan.models,
+            key_type: plan.key_type,
+            metadata: {
+                [metadataCustomerIdField]: customer.id,
+                razorpay_customer_id: customer.id,
+                email: email || '',
+                phone: phone || '',
+                available_budget: plan.metadata_available_budget,
+                product_id: product.id,
+                product_name: product.name,
+                payment_id: payment.id,
+                order_id: orderId,
+                flow_type: 'paid_checkout',
+                ...plan.metadata
+            }
+        });
+
+        const key = keyResp.data?.key;
+        if (!key) throw new Error('LiteLLM key generation returned no key');
+        logInfo('[webhook-fulfillment] LiteLLM key generated', { orderId, keyPrefix: key.slice(0, 8) + '...' });
+
+        // ── Generate plugin zip ───────────────────────────────────────
+        const zipUrl = generatePluginZipForKey(key);
+        logInfo('[webhook-fulfillment] plugin zip generated', { orderId, zipUrl });
+
+        // ── Save to Razorpay customer notes (recovery artifact) ────────────
+        await updateRazorpayCustomerNotes(customer, {
+            litellm_key: key,
+            plugin_zip_url: zipUrl,
             product_id: product.id,
             product_name: product.name,
-            payment_id: payment.id,
             order_id: orderId,
-            flow_type: 'paid_checkout',
-            ...plan.metadata
-        }
-    });
+            payment_id: payment.id,
+            flow_type: 'paid_checkout'
+        });
+        logInfo('[webhook-fulfillment] Razorpay customer notes updated', { orderId, customerId: customer.id });
 
-    const key = keyResp.data?.key;
-    if (!key) throw new Error('LiteLLM key generation failed');
+        // ── Write to fulfilled-orders.json – this is what /api/check-key reads ──
+        saveFulfilledOrder(orderId, {
+            orderId,
+            paymentId: payment.id,
+            customerId: customer.id,
+            key,
+            zipUrl,
+            phone: phone || null,
+            email: email || null,
+            productId: product.id
+        });
+        addProcessedPaymentId(payment.id);
 
-    const downloadUrl = generatePluginZipForKey(key);
-    await updateRazorpayCustomerNotes(customer, {
-        litellm_key: key,
-        plugin_zip_url: downloadUrl,
-        product_id: product.id,
-        product_name: product.name,
-        order_id: orderId,
-        payment_id: payment.id,
-        flow_type: 'paid_checkout'
-    });
-
-    markFulfillment(orderId, {
-        status: 'ready',
-        key,
-        pluginUrl: downloadUrl,
-        completedAt: nowMs()
-    });
+        logInfo('[webhook-fulfillment] ✅ DONE — order fulfilled', { orderId, paymentId: payment.id, zipUrl });
+    } catch (err) {
+        logError('[webhook-fulfillment] ❌ FAILED', err);
+        // Do NOT crash — Razorpay will retry the webhook
+    }
 }
 
 async function processAccountTopupFulfillment({ orderId, payment, customer }) {
@@ -763,7 +1376,7 @@ async function processAccountTopupFulfillment({ orderId, payment, customer }) {
     const keyBudgetIncrement = toNumber(plan.key_budget, 0);
     const currentAvailableBudget = toNumber(currentMetadata.available_budget, 0);
     const nextAvailableBudget = currentAvailableBudget + availableIncrement;
-    const phone = normalizePhone(customer?.contact || payment?.contact || context.contactHint || null);
+    const phone = normalizeRazorpayContact(customer?.contact || payment?.contact || context.contactHint || null);
     const email = normalizeEmail(customer?.email || payment?.email || context.emailHint || null);
 
     const updatePayload = {
@@ -811,7 +1424,7 @@ async function processAccountTopupFulfillment({ orderId, payment, customer }) {
         keyInfo: {
             available_budget: refreshedInfo.availableBudget,
             customer_id: getOrderContextCustomerId(refreshedInfo.metadata),
-            phone: normalizePhone(refreshedInfo.metadata.phone || refreshedInfo.metadata.contact || null),
+            phone: normalizeRazorpayContact(refreshedInfo.metadata.phone || refreshedInfo.metadata.contact || null),
             email: normalizeEmail(refreshedInfo.metadata.email || null)
         },
         completedAt: nowMs()
@@ -854,8 +1467,164 @@ function generatePluginZipForKey(apiKey) {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+
+// ── Razorpay Webhook — MUST be registered BEFORE express.json() ─────────────
+// express.json() consumes the body stream for ALL routes globally. If the webhook
+// route is registered after it, req.body is already a parsed object (not raw bytes)
+// by the time express.raw() runs → the raw body is empty → HMAC fails → 400.
+//
+// By registering here (before express.json), this route's own express.raw()
+// middleware intercepts the body stream first on this specific path.
+app.post(RAZORPAY_WEBHOOK_PATH, express.raw({ type: 'application/json' }), async (req, res) => {
+    const signature = String(req.headers['x-razorpay-signature'] || '').trim();
+    const secret = String(process.env.RAZORPAY_WEBHOOK_SECRET || '').trim();
+    const bodyType = Buffer.isBuffer(req.body) ? 'Buffer' : typeof req.body;
+    const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : '';
+    const bodyLength = rawBody.length;
+    const contentType = req.headers['content-type'] || '(none)';
+
+    logInfo('[razorpay-webhook] incoming request', {
+        contentType, bodyType, bodyLength,
+        hasSignature: !!signature,
+        signaturePrefix: signature ? signature.slice(0, 12) + '...' : '(none)',
+        secretConfigured: !!secret
+    });
+
+    if (!secret) {
+        logError('[razorpay-webhook] RAZORPAY_WEBHOOK_SECRET is not configured');
+        return res.status(500).json({ error: 'Webhook secret is not configured' });
+    }
+    if (!signature) {
+        logWarn('[razorpay-webhook] request received without x-razorpay-signature header');
+        return res.status(400).json({ error: 'Missing webhook signature' });
+    }
+    if (bodyLength === 0) {
+        logError('[razorpay-webhook] raw body is EMPTY — express.json() may have consumed the stream. Check middleware order.');
+        return res.status(400).json({ error: 'Empty body' });
+    }
+
+    logDebug('[razorpay-webhook] raw body received', {
+        bodyLength,
+        bodyPreview: rawBody.slice(0, 80).replace(/\n/g, ' ')
+    });
+
+    // ── HMAC verification ────────────────────────────────────────────────────
+    const expectedHmac = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+    logDebug('[razorpay-webhook] HMAC check', {
+        expectedPrefix: expectedHmac.slice(0, 12) + '...',
+        receivedPrefix: signature.slice(0, 12) + '...',
+        match: expectedHmac === signature
+    });
+
+    if (!timingSafeHexEqual(expectedHmac, signature)) {
+        logWarn('[razorpay-webhook] signature mismatch', {
+            bodyLength, bodyType,
+            expectedPrefix: expectedHmac.slice(0, 12) + '...',
+            receivedPrefix: signature.slice(0, 12) + '...'
+        });
+        return res.status(400).json({ error: 'Invalid webhook signature' });
+    }
+
+    // ── Parse payload ────────────────────────────────────────────────────────
+    let payload = null;
+    try {
+        payload = JSON.parse(rawBody);
+    } catch (_) {
+        logWarn('[razorpay-webhook] could not parse payload JSON', { bodyPreview: rawBody.slice(0, 120) });
+        return res.status(400).json({ error: 'Invalid webhook payload' });
+    }
+
+    const event = String(payload?.event || '').trim();
+    const paymentEntity = payload?.payload?.payment?.entity || null;
+    const orderEntity = payload?.payload?.order?.entity || null;
+    const orderId = String(paymentEntity?.order_id || orderEntity?.id || '').trim();
+    const paymentId = String(paymentEntity?.id || '').trim() || null;
+
+    logInfo('[razorpay-webhook] event received', { event, orderId, paymentId });
+
+    // ── Ignore unhandled events ──────────────────────────────────────────────
+    if (!event || !['payment.captured', 'payment.authorized', 'order.paid'].includes(event)) {
+        logDebug('[razorpay-webhook] ignoring event', { event });
+        return res.json({ ok: true, ignored: true });
+    }
+    if (!orderId) {
+        logWarn('[razorpay-webhook] no orderId in payload, ignoring', { event });
+        return res.json({ ok: true, ignored: true });
+    }
+
+    // ── Respond 200 immediately so Razorpay doesn't retry ───────────────────
+    // Fulfillment runs in the background. check-key polls fulfilled-orders.json.
+    res.json({ ok: true });
+
+    doWebhookFulfillment(orderId, paymentId);
+});
+// ── End webhook ──────────────────────────────────────────────────────────────
+
 app.use(express.json({ limit: '64kb' }));
+
+// ── Video streaming with proper byte-range support ──────────────────────────
+// express.static does NOT reliably handle Range requests for large files through
+// Cloudflare tunnel (causes "unexpected EOF"). This route pipes a ReadStream
+// for exactly the requested byte range, preventing server crashes.
+const VIDEOS_DIR = path.join(__dirname, 'public', 'assets', 'videos');
+
+app.get('/assets/videos/:filename', (req, res) => {
+    const filename = path.basename(req.params.filename); // prevent path traversal
+    const videoPath = path.join(VIDEOS_DIR, filename);
+
+    if (!fs.existsSync(videoPath)) {
+        return res.status(404).send('Not found');
+    }
+
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const rangeHeader = req.headers.range;
+
+    if (rangeHeader) {
+        // Parse "bytes=start-end"
+        const parts = rangeHeader.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + 1024 * 1024 - 1, fileSize - 1); // 1 MB chunks
+        const chunkSize = end - start + 1;
+
+        logDebug('[video] streaming range', { file: filename, start, end, chunkSize, fileSize });
+
+        res.writeHead(206, {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunkSize,
+            'Content-Type': 'video/mp4',
+            'Cache-Control': 'public, max-age=86400'
+        });
+
+        const stream = fs.createReadStream(videoPath, { start, end });
+        stream.on('error', (err) => {
+            logError('[video] stream error', err);
+            if (!res.headersSent) res.status(500).end();
+            else res.end();
+        });
+        stream.pipe(res);
+    } else {
+        // Full file request (e.g. direct download)
+        logDebug('[video] full file request', { file: filename, fileSize });
+        res.writeHead(200, {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4',
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'public, max-age=86400'
+        });
+        const stream = fs.createReadStream(videoPath);
+        stream.on('error', (err) => {
+            logError('[video] stream error', err);
+            res.end();
+        });
+        stream.pipe(res);
+    }
+});
+// ───────────────────────────────────────────────────────────────────────────
+
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 app.use(helmet({
     contentSecurityPolicy: {
@@ -867,7 +1636,8 @@ app.use(helmet({
                 'https://checkout.razorpay.com',
                 'https://www.googletagmanager.com',
                 'https://connect.facebook.net',
-                'https://www.clarity.ms'
+                'https://www.clarity.ms',
+                'https://static.cloudflareinsights.com'
             ],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
@@ -881,7 +1651,7 @@ app.use(helmet({
 }));
 
 app.use(compression());
-app.use(morgan('combined'));
+app.use(morgan('combined', { stream: morganStream }));
 
 function getCheckoutViewData() {
     return {
@@ -909,11 +1679,14 @@ app.get('/topup', (req, res) => res.redirect('/account'));
 app.post('/api/checkout', async (req, res) => {
     const productId = String(req.body?.productId || '').trim();
     if (!productId) {
+        logWarn('[api/checkout] missing productId');
         return res.status(400).json({ error: 'productId is required' });
     }
 
+    logInfo('[api/checkout] creating order', { productId });
     try {
         const { order, product } = await createRazorpayOrderForProduct(productId);
+        logInfo('[api/checkout] order created', { orderId: order.id, productId, amount: order.amount });
         return res.json({
             order,
             product,
@@ -921,7 +1694,7 @@ app.post('/api/checkout', async (req, res) => {
             checkout: runtimeConfig.payment_gateway
         });
     } catch (err) {
-        console.error('[api/checkout] failed:', err.message);
+        logError('[api/checkout] failed', err);
         return res.status(500).json({ error: err.message || 'Could not create checkout order' });
     }
 });
@@ -932,97 +1705,69 @@ app.post('/api/payment/verify', async (req, res) => {
     const signature = String(req.body?.razorpay_signature || '').trim();
 
     if (!paymentId || !orderId || !signature) {
+        logWarn('[api/payment/verify] missing fields', { orderId, paymentId: !!paymentId, signature: !!signature });
         return res.status(400).json({ error: 'Missing payment verification fields' });
     }
 
-    const context = pendingOrders.get(orderId);
-    if (!context) {
-        return res.status(404).json({ error: 'Order not found or expired' });
-    }
-    if (context.flowType === 'account_topup') {
-        return res.status(400).json({ error: 'Use /api/account/payment/verify for account top-up orders' });
-    }
-
+    logInfo('[api/payment/verify] verifying signature', { orderId, paymentId });
     if (!verifyRazorpaySignature(orderId, paymentId, signature)) {
+        logWarn('[api/payment/verify] invalid signature', { orderId, paymentId });
         return res.status(400).json({ error: 'Invalid payment signature' });
     }
 
     try {
-        const paymentResp = await razorpay.get(`/payments/${encodeURIComponent(paymentId)}`);
-        let payment = paymentResp.data;
-        payment = await capturePaymentIfNeeded(payment);
-
-        if (!payment || payment.status !== 'captured') {
-            return res.status(400).json({ error: `Payment not captured. Current status: ${payment?.status || 'unknown'}` });
+        const payment = await ensureCapturedPayment({ orderId, paymentId });
+        if (!payment) {
+            logWarn('[api/payment/verify] payment not yet captured', { orderId, paymentId });
+            return res.status(400).json({ error: 'Payment not captured. Please wait a few seconds and try again.' });
         }
 
-        const customer = await upsertRazorpayCustomerFromPayment(payment, {
+        logInfo('[api/payment/verify] payment captured, enqueuing fulfillment', { orderId, paymentId });
+        await enqueueFulfillmentForPayment({
             orderId,
-            productId: context.productId,
-            flowType: context.flowType || 'paid_checkout',
+            payment,
+            expectedFlow: 'paid_checkout',
             emailHint: normalizeEmail(payment.email || null),
-            contactHint: normalizePhone(payment.contact || null),
-            customerIdHint: payment.customer_id || null
+            contactHint: normalizeRazorpayContact(payment.contact || null)
         });
 
-        markFulfillment(orderId, {
-            status: 'processing',
-            paymentId: payment.id,
-            customerId: customer.id,
-            phone: customer.contact || null
-        });
-
-        if (!processedPaymentIds.has(payment.id)) {
-            processedPaymentIds.add(payment.id);
-            processPaidFulfillment({ orderId, payment, customer }).catch((err) => {
-                console.error('[fulfillment] failed:', err.message);
-                markFulfillment(orderId, {
-                    status: 'error',
-                    message: err.message || 'Fulfillment failed'
-                });
-            });
-        }
-
+        logInfo('[api/payment/verify] done — redirecting to success page', { orderId, paymentId });
         return res.json({
             ok: true,
             redirectUrl: `/success?order_id=${encodeURIComponent(orderId)}&payment_id=${encodeURIComponent(payment.id)}`
         });
     } catch (err) {
-        console.error('[api/payment/verify] failed:', err.message);
+        logError('[api/payment/verify] failed', err);
+        if (String(err.message || '').toLowerCase().includes('flow mismatch')) {
+            return res.status(400).json({ error: 'Use /api/account/payment/verify for account top-up orders' });
+        }
         markFulfillment(orderId, {
             status: 'error',
+            flowType: 'paid_checkout',
             message: err.message || 'Payment verification failed'
         });
         return res.status(500).json({ error: 'Payment verification failed' });
     }
 });
 
-app.get('/api/check-key', async (req, res) => {
+app.get('/api/check-key', (req, res) => {
     const orderId = String(req.query.order_id || '').trim();
     if (!orderId) {
         return res.status(400).json({ status: 'error', message: 'Missing order_id' });
     }
 
-    const state = fulfillmentByOrder.get(orderId);
-    if (!state) {
-        return res.json({ status: 'processing' });
-    }
-    if (state.flowType && state.flowType !== 'account_topup') {
-        return res.status(400).json({ status: 'error', message: 'Order is not an account top-up order' });
-    }
+    const fulfilled = getFulfilledOrder(orderId);
 
-    if (state.status === 'error') {
-        return res.status(500).json({ status: 'error', message: state.message || 'Fulfillment failed' });
-    }
-
-    if (state.status === 'ready') {
+    if (fulfilled) {
+        logInfo('[api/check-key] key ready', { orderId, zipUrl: fulfilled.zipUrl });
         return res.json({
             status: 'ready',
-            key: state.key || null,
-            pluginUrl: state.pluginUrl || null
+            key: fulfilled.key || null,
+            pluginUrl: fulfilled.zipUrl || null
         });
     }
 
+    logDebug('[api/check-key] not yet fulfilled, returning processing', { orderId });
     return res.json({ status: 'processing' });
 });
 
@@ -1035,7 +1780,7 @@ app.post('/api/account/key-info', async (req, res) => {
     try {
         const keyInfo = await getLiteLlmKeyInfo(key);
         const customerId = getOrderContextCustomerId(keyInfo.metadata);
-        const phone = normalizePhone(keyInfo.metadata.phone || keyInfo.metadata.contact || null);
+        const phone = normalizeRazorpayContact(keyInfo.metadata.phone || keyInfo.metadata.contact || null);
         const email = normalizeEmail(keyInfo.metadata.email || null);
         const keyAlias = String(keyInfo.info?.key_alias || keyInfo.info?.key_name || '').trim() || null;
 
@@ -1049,7 +1794,7 @@ app.post('/api/account/key-info', async (req, res) => {
             email
         });
     } catch (err) {
-        console.error('[api/account/key-info] failed:', err.message);
+        logError('[api/account/key-info] failed', err);
         return res.status(400).json({ error: 'Invalid LiteLLM key or key info unavailable' });
     }
 });
@@ -1078,7 +1823,7 @@ app.post('/api/account/download-zip', async (req, res) => {
             downloadUrl
         });
     } catch (err) {
-        console.error('[api/account/download-zip] failed:', err.message);
+        logError('[api/account/download-zip] failed', err);
         return res.status(500).json({ error: 'Could not generate plugin zip' });
     }
 });
@@ -1088,19 +1833,22 @@ app.post('/api/account/checkout', async (req, res) => {
     const key = String(req.body?.key || '').trim();
 
     if (!productId) {
+        logWarn('[api/account/checkout] missing productId');
         return res.status(400).json({ error: 'productId is required' });
     }
     if (!key) {
+        logWarn('[api/account/checkout] missing key');
         return res.status(400).json({ error: 'LiteLLM key is required' });
     }
 
+    logInfo('[api/account/checkout] creating top-up order', { productId });
     try {
         ensureFlowProvidersConfigured();
 
         const keyInfo = await getLiteLlmKeyInfo(key);
         const metadata = keyInfo.metadata || {};
         const existingCustomerId = getOrderContextCustomerId(metadata);
-        const contactHint = normalizePhone(metadata.phone || metadata.contact || null);
+        const contactHint = normalizeRazorpayContact(metadata.phone || metadata.contact || null);
         const emailHint = normalizeEmail(metadata.email || null);
         const keyHash = crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
 
@@ -1118,6 +1866,16 @@ app.post('/api/account/checkout', async (req, res) => {
             }
         });
 
+        logInfo('[api/account/checkout] top-up order created', { orderId: order.id, productId, customerId: existingCustomerId || null });
+
+        if (existingCustomerId) {
+            await updateRazorpayCustomerNotes({ id: existingCustomerId }, {
+                litellm_key: key,
+                flow_type: 'account_topup_pending',
+                pending_order_id: order.id
+            });
+        }
+
         return res.json({
             order,
             product,
@@ -1127,7 +1885,7 @@ app.post('/api/account/checkout', async (req, res) => {
             prefillContact: contactHint || null
         });
     } catch (err) {
-        console.error('[api/account/checkout] failed:', err.message);
+        logError('[api/account/checkout] failed', err);
         return res.status(500).json({ error: err.message || 'Could not create checkout order' });
     }
 });
@@ -1136,69 +1894,50 @@ app.post('/api/account/payment/verify', async (req, res) => {
     const paymentId = String(req.body?.razorpay_payment_id || '').trim();
     const orderId = String(req.body?.razorpay_order_id || '').trim();
     const signature = String(req.body?.razorpay_signature || '').trim();
+    const topupKeyHint = normalizeLiteLlmKey(req.body?.topup_key || null);
 
     if (!paymentId || !orderId || !signature) {
+        logWarn('[api/account/payment/verify] missing fields', { orderId, paymentId: !!paymentId, signature: !!signature });
         return res.status(400).json({ error: 'Missing payment verification fields' });
     }
 
-    const context = pendingOrders.get(orderId);
-    if (!context) {
-        return res.status(404).json({ error: 'Order not found or expired' });
-    }
-    if (context.flowType !== 'account_topup') {
-        return res.status(400).json({ error: 'This order is not an account top-up order' });
-    }
+    logInfo('[api/account/payment/verify] verifying signature', { orderId, paymentId });
     if (!verifyRazorpaySignature(orderId, paymentId, signature)) {
+        logWarn('[api/account/payment/verify] invalid signature', { orderId, paymentId });
         return res.status(400).json({ error: 'Invalid payment signature' });
     }
 
     try {
-        const paymentResp = await razorpay.get(`/payments/${encodeURIComponent(paymentId)}`);
-        let payment = paymentResp.data;
-        payment = await capturePaymentIfNeeded(payment);
-
-        if (!payment || payment.status !== 'captured') {
+        const payment = await ensureCapturedPayment({ orderId, paymentId });
+        if (!payment) {
+            logWarn('[api/account/payment/verify] payment not yet captured', { orderId, paymentId });
             return res.status(400).json({
-                error: `Payment not captured. Current status: ${payment?.status || 'unknown'}`
+                error: 'Payment not captured. Please wait a few seconds and try again.'
             });
         }
 
-        const customer = await upsertRazorpayCustomerFromPayment(payment, {
+        logInfo('[api/account/payment/verify] payment captured, enqueuing topup fulfillment', { orderId, paymentId, hasTopupKey: !!topupKeyHint });
+        await enqueueFulfillmentForPayment({
             orderId,
-            productId: context.productId,
-            flowType: 'account_topup',
-            emailHint: context.emailHint || null,
-            contactHint: context.contactHint || null,
-            customerIdHint: context.existingCustomerId || payment.customer_id || null
+            payment,
+            expectedFlow: 'account_topup',
+            topupKeyHint
         });
 
-        markFulfillment(orderId, {
-            status: 'processing',
-            flowType: 'account_topup',
-            paymentId: payment.id,
-            customerId: customer.id,
-            phone: customer.contact || null
-        });
-
-        if (!processedPaymentIds.has(payment.id)) {
-            processedPaymentIds.add(payment.id);
-            processAccountTopupFulfillment({ orderId, payment, customer }).catch((err) => {
-                console.error('[account-fulfillment] failed:', err.message);
-                markFulfillment(orderId, {
-                    status: 'error',
-                    flowType: 'account_topup',
-                    message: err.message || 'Fulfillment failed'
-                });
-            });
-        }
-
+        logInfo('[api/account/payment/verify] done', { orderId, paymentId });
         return res.json({
             ok: true,
             orderId,
             paymentId: payment.id
         });
     } catch (err) {
-        console.error('[api/account/payment/verify] failed:', err.message);
+        logError('[api/account/payment/verify] failed', err);
+        if (String(err.message || '').toLowerCase().includes('flow mismatch')) {
+            return res.status(400).json({ error: 'This order is not an account top-up order' });
+        }
+        if (String(err.message || '').toLowerCase().includes('top-up key is missing')) {
+            return res.status(400).json({ error: 'Top-up key is missing. Reload account and retry payment verification.' });
+        }
         markFulfillment(orderId, {
             status: 'error',
             flowType: 'account_topup',
@@ -1210,12 +1949,30 @@ app.post('/api/account/payment/verify', async (req, res) => {
 
 app.get('/api/account/payment-status', async (req, res) => {
     const orderId = String(req.query.order_id || '').trim();
+    const topupKeyHint = normalizeLiteLlmKey(req.headers['x-topup-key'] || null);
     if (!orderId) {
         return res.status(400).json({ status: 'error', message: 'Missing order_id' });
     }
 
-    const state = fulfillmentByOrder.get(orderId);
+    let state = fulfillmentByOrder.get(orderId);
+    if (!state || state.status === 'awaiting_payment' || state.status === 'processing') {
+        logInfo('[api/account/payment-status] triggering recovery', { orderId, prevStatus: state?.status || 'none' });
+        try {
+            await recoverAndQueueFulfillment(orderId, {
+                expectedFlow: 'account_topup',
+                topupKeyHint
+            });
+        } catch (err) {
+            logError('[api/account/payment-status] recovery failed', err);
+        }
+        state = fulfillmentByOrder.get(orderId);
+        logDebug('[api/account/payment-status] state after recovery', { orderId, status: state?.status || 'none' });
+    }
+
     if (!state) {
+        return res.json({ status: 'processing' });
+    }
+    if (state.flowType && state.flowType !== 'account_topup') {
         return res.json({ status: 'processing' });
     }
 
@@ -1244,9 +2001,11 @@ app.get('/success', (req, res) => {
     const paymentId = String(req.query.payment_id || '').trim() || null;
 
     if (!orderId) {
+        logWarn('[/success] accessed without order_id, redirecting home');
         return res.redirect('/');
     }
 
+    logInfo('[/success] rendering success page', { orderId, paymentId });
     const context = pendingOrders.get(orderId) || {};
     const state = fulfillmentByOrder.get(orderId) || {};
     const amount = context.amountPaise ? (context.amountPaise / 100).toFixed(2) : null;
@@ -1273,15 +2032,20 @@ app.post('/api/free-download', async (req, res) => {
     const hasValidPhone = !!phone && isValidPhone(phone);
 
     if (!hasValidEmail && !hasValidPhone) {
+        logWarn('[api/free-download] invalid or missing contact', { email: !!email, phone: !!phone });
         return res.status(400).json({ error: 'Provide a valid email or Indian phone number' });
     }
 
+    logInfo('[api/free-download] request received', { via: hasValidEmail ? 'email' : 'phone' });
     try {
         ensureFlowProvidersConfigured();
 
         const customer = hasValidEmail
             ? await upsertRazorpayCustomerByEmail(email)
             : await upsertRazorpayCustomerByContact(phone);
+
+        logDebug('[api/free-download] customer upserted', { customerId: customer.id });
+
         const key = await createFreeLiteLlmKey({
             email: hasValidEmail ? email : null,
             phone: hasValidPhone ? phone : null,
@@ -1299,23 +2063,39 @@ app.post('/api/free-download', async (req, res) => {
 
         await updateRazorpayCustomerNotes(customer, notesPatch);
 
+        logInfo('[api/free-download] plugin zip generated', { customerId: customer.id, downloadUrl });
         return res.json({
             ok: true,
             downloadUrl
         });
     } catch (err) {
-        console.error('[api/free-download] failed:', err.message);
+        logError('[api/free-download] failed', err);
         return res.status(500).json({
             error: 'Could not prepare your free download. Please try again.'
         });
     }
 });
 
+
+
+
 app.get('/health', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log('\nServer is running');
-    console.log('Mode: PRODUCTION');
-    console.log(`Local URL: http://localhost:${PORT}`);
+    logInfo('Server started', {
+        mode: 'PRODUCTION',
+        port: PORT,
+        url: `http://localhost:${PORT}`,
+        logFile: 'app_debug.log'
+    });
 });
+
+// ── Graceful shutdown ─────────────────────────────────────────────────
+function shutdown(signal) {
+    logInfo(`[process] received ${signal} — persisting state and exiting`);
+    persistOrderStateNow();
+    process.exit(0);
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

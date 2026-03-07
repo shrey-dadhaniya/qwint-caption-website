@@ -13,6 +13,7 @@ payment-config.json
 
 # ── Generated plugin zips (contain customer API keys) ──────────
 src/public/downloads/
+src/private/runtime/
 
 # ── Logs ───────────────────────────────────────────────────────
 logs/

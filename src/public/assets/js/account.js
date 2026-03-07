@@ -160,7 +160,9 @@ async function pollAccountPaymentStatus(orderId) {
   if (!orderId) return;
 
   try {
-    const response = await fetch(`/api/account/payment-status?order_id=${encodeURIComponent(orderId)}`);
+    const response = await fetch(`/api/account/payment-status?order_id=${encodeURIComponent(orderId)}`, {
+      headers: accountState.key ? { 'x-topup-key': accountState.key } : undefined
+    });
     const data = await response.json();
 
     if (data.status === 'ready') {
@@ -186,7 +188,10 @@ async function verifyAccountPayment(paymentResponse) {
   const response = await fetch('/api/account/payment/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(paymentResponse)
+    body: JSON.stringify({
+      ...paymentResponse,
+      topup_key: accountState.key || ''
+    })
   });
   const data = await response.json();
 

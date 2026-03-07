@@ -18,6 +18,7 @@ services:
       - BASE_URL=${BASE_URL}
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
       - LITELLM_URL=${LITELLM_URL}
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
 
@@ -25,6 +26,7 @@ services:
     volumes:
       - ./payment-config.example.json:/app/payment-config.json:ro
       - plugin_downloads:/app/src/public/downloads
+      - payment_runtime:/app/src/private/runtime
 
     # ── Health check ───────────────────────────────────────────────
     # Uses the same PORT variable to ensure internal connectivity checks pass
@@ -38,3 +40,4 @@ services:
 # Named volume managed by Coolify/Docker
 volumes:
   plugin_downloads:
+  payment_runtime:

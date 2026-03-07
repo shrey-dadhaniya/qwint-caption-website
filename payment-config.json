@@ -16,7 +16,9 @@
     "metadata_customer_id_field": "razorpay_customer_id",
     "free_download": {
       "team_id": "qwint-caption",
-      "models": ["gemini/gemini-2.5-flash"],
+      "models": [
+        "gemini/gemini-2.5-flash"
+      ],
       "key_type": "llm_api",
       "key_budget": 10,
       "metadata_available_budget": 60,
@@ -29,7 +31,9 @@
   },
   "free_download": {
     "team_id": "qwint-caption",
-    "models": ["gemini/gemini-2.5-flash"],
+    "models": [
+      "gemini/gemini-2.5-flash"
+    ],
     "key_type": "llm_api",
     "key_budget": 10,
     "metadata_available_budget": 60,
@@ -43,76 +47,109 @@
   "products": [
     {
       "id": "a",
-      "name": "Package A",
-      "tagline": "STARTER",
-      "description": "Ideal for trying out caption generation on short projects.",
-      "amount_inr": 199,
+      "name": "Starter Pack",
+      "tagline": "BEST ENTRY",
+      "description": "The perfect way to get started. Credits never expire, but once you use all 60 minutes, the pack will be exhausted.",
+      "amount_inr": 249,
       "tax_note": "+ Tax",
       "credits_minutes": 60,
       "benefits": [
-        "60 caption minutes",
-        "Fast AI processing",
-        "Credits do not expire"
+        "60 Minutes Credits",
+        "Credits never expire",
+        "One-time payment"
       ],
       "litellm": {
         "team_id": "qwint-caption",
         "key_type": "llm_api",
-        "models": ["gemini/gemini-2.5-flash"],
+        "models": [
+          "gemini/gemini-2.5-flash"
+        ],
         "key_budget": 10,
         "metadata_available_budget": 3600,
         "metadata": {
           "plan_code": "A",
-          "plan_name": "Package A"
+          "plan_name": "Starter Pack"
         }
       }
     },
     {
       "id": "b",
-      "name": "Package B",
-      "tagline": "MOST POPULAR",
-      "description": "Balanced pack for active creators with recurring caption needs.",
-      "amount_inr": 499,
+      "name": "Lite Pack",
+      "tagline": "Lite Pack",
+      "description": "The perfect way to get started. Credits never expire, but once you use all 60 minutes, the pack will be exhausted.",
+      "amount_inr": 169,
       "tax_note": "+ Tax",
-      "credits_minutes": 180,
+      "credits_minutes": 30,
       "benefits": [
-        "180 caption minutes",
-        "Priority queue processing",
-        "Credits do not expire"
+        "30 Minutes Credits",
+        "Credits never expire",
+        "One-time payment"
       ],
       "litellm": {
         "team_id": "qwint-caption",
         "key_type": "llm_api",
-        "models": ["gemini/gemini-2.5-flash"],
-        "key_budget": 30,
-        "metadata_available_budget": 10800,
+        "models": [
+          "gemini/gemini-2.5-flash"
+        ],
+        "key_budget": 10,
+        "metadata_available_budget": 1800,
         "metadata": {
           "plan_code": "B",
-          "plan_name": "Package B"
+          "plan_name": "Lite Pack"
         }
       }
     },
     {
       "id": "c",
-      "name": "Package C",
-      "tagline": "PRO",
-      "description": "High-volume pack for studios and teams managing large projects.",
-      "amount_inr": 999,
+      "name": "Creator Pack",
+      "tagline": "Creator Pack",
+      "description": "The perfect way to get started. Credits never expire, but once you use all 60 minutes, the pack will be exhausted.",
+      "amount_inr": 399,
       "tax_note": "+ Tax",
-      "credits_minutes": 420,
+      "credits_minutes": 180,
       "benefits": [
-        "420 caption minutes",
-        "Highest processing priority",
-        "Credits do not expire"
+        "180 Minutes Credits",
+        "Credits never expire",
+        "One-time payment"
       ],
       "litellm": {
         "team_id": "qwint-caption",
         "key_type": "llm_api",
-        "models": ["gemini/gemini-2.5-flash"],
+        "models": [
+          "gemini/gemini-2.5-flash"
+        ],
         "key_budget": 50,
-        "metadata_available_budget": 25200,
+        "metadata_available_budget": 10800,
         "metadata": {
           "plan_code": "C",
-          "plan_name": "Package C"
+          "plan_name": "Creator Pack"
+        }
+      }
+    },
+    {
+      "id": "d",
+      "name": "Studio Pack",
+      "tagline": "Studio Pack",
+      "description": "The perfect way to get started. Credits never expire, but once you use all 60 minutes, the pack will be exhausted.",
+      "amount_inr": 499,
+      "tax_note": "+ Tax",
+      "credits_minutes": 360,
+      "benefits": [
+        "180 Minutes Credits",
+        "Credits never expire",
+        "One-time payment"
+      ],
+      "litellm": {
+        "team_id": "qwint-caption",
+        "key_type": "llm_api",
+        "models": [
+          "gemini/gemini-2.5-flash"
+        ],
+        "key_budget": 70,
+        "metadata_available_budget": 21600,
+        "metadata": {
+          "plan_code": "D",
+          "plan_name": "Studio Pack"
         }
       }
     }

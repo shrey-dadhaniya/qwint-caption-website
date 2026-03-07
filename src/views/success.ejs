@@ -114,7 +114,11 @@
                 const orderId = "<%= order_id %>";
 
                 // ── Polling for key ──
+                let pollAttempts = 0;
+                const MAX_POLL_ATTEMPTS = 28; // ~70 seconds before giving up
+
                 async function poll() {
+                    pollAttempts++;
                     try {
                         const res = await fetch(`/api/check-key?order_id=${orderId}`);
                         const data = await res.json();
@@ -122,7 +126,7 @@
                         if (data.status === 'ready') {
                             document.getElementById('sub-status').textContent = 'Your plugin is ready to download!';
 
-                            localStorage.setItem('qwint_litellm_key', data.key);
+                            if (data.key) localStorage.setItem('qwint_litellm_key', data.key);
 
                             // Hide spinner
                             document.getElementById('loading-wrap').style.display = 'none';
@@ -139,11 +143,24 @@
                             document.getElementById('sub-status').textContent = data.message || 'Payment completed, but setup is delayed. Please contact support.';
                             document.getElementById('loading-wrap').style.display = 'none';
                             document.getElementById('actions').classList.add('visible');
+                        } else if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+                            // Give up after ~70s — show support message
+                            document.getElementById('sub-status').textContent =
+                                'Setup is taking longer than expected. Please email support with your Order ID — we\'ll sort it out quickly.';
+                            document.getElementById('loading-wrap').style.display = 'none';
+                            document.getElementById('actions').classList.add('visible');
                         } else {
                             setTimeout(poll, 2500);
                         }
                     } catch (e) {
-                        setTimeout(poll, 5000);
+                        if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+                            document.getElementById('sub-status').textContent =
+                                'Setup is taking longer than expected. Please email support with your Order ID.';
+                            document.getElementById('loading-wrap').style.display = 'none';
+                            document.getElementById('actions').classList.add('visible');
+                        } else {
+                            setTimeout(poll, 5000);
+                        }
                     }
                 }
 
