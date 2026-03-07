@@ -276,6 +276,11 @@ const razorpay = axios.create({
 const pendingOrders = new Map();
 const fulfillmentByOrder = new Map();
 const processedPaymentIds = new Set();
+// In-memory lock: claimed synchronously BEFORE the first await in doWebhookFulfillment.
+// Because Node.js is single-threaded, setting this before any await ensures that
+// concurrent webhook retries (fired within milliseconds) see it and exit immediately
+// — even though fulfilled-orders.json hasn't been written yet.
+const fulfillmentInProgress = new Set();
 const ORDER_STATE_TTL_MS = 24 * 60 * 60 * 1000;
 const ORDER_STATE_DIR = path.join(__dirname, 'private', 'runtime');
 const ORDER_STATE_FILE = path.join(ORDER_STATE_DIR, 'payment-state.json');
@@ -577,6 +582,18 @@ function normalizeEmail(email) {
     return value || null;
 }
 
+// Razorpay substitutes void@razorpay.com when no real email is provided.
+// Using it for customer lookup would match the first customer ever created
+// without a real email, giving all such payments the same customer ID.
+const RAZORPAY_VOID_EMAILS = new Set([
+    'void@razorpay.com',
+    'noemail@razorpay.com',
+    'no-reply@razorpay.com'
+]);
+function isRazorpayPlaceholderEmail(email) {
+    return !!email && RAZORPAY_VOID_EMAILS.has(String(email).trim().toLowerCase());
+}
+
 function normalizePhone(phone) {
     if (!phone) return null;
     const value = String(phone).replace(/[^\d]/g, '').trim();
@@ -696,36 +713,96 @@ async function upsertRazorpayCustomerByContact(contact) {
 }
 
 async function updateRazorpayCustomerNotes(customer, notesPatch) {
-    let current = customer;
-    if (current && current.id && (!current.name || typeof current.notes === 'undefined')) {
-        try {
-            const fetched = await razorpay.get(`/customers/${encodeURIComponent(current.id)}`);
-            current = fetched.data;
-        } catch (err) {
-            // use provided payload as fallback
-        }
+    const customerId = String(customer?.id || '').trim();
+    if (!customerId) {
+        logError('[updateRazorpayCustomerNotes] called without valid customer id');
+        return;
     }
 
+    // Always fetch fresh customer — caller may have a slim { id, email, contact }
+    // object without notes, which would cause an overwrite instead of a merge.
+    let current = null;
+    try {
+        const fetched = await razorpay.get(`/customers/${encodeURIComponent(customerId)}`);
+        current = fetched.data;
+        logDebug('[updateRazorpayCustomerNotes] fetched customer', {
+            customerId,
+            existingNoteKeys: Object.keys(current.notes || {})
+        });
+    } catch (err) {
+        logWarn('[updateRazorpayCustomerNotes] could not fetch customer, using provided object', {
+            customerId, error: err.message
+        });
+        current = customer;
+    }
+
+    // Merge: existing notes + patch (patch wins on conflicts)
     const mergedNotes = {
         ...((current && current.notes) || {}),
         ...(notesPatch || {})
     };
 
-    await razorpay.put(`/customers/${encodeURIComponent(current.id)}`, {
-        name: current.name || `customer_${Date.now()}`,
-        email: current.email || undefined,
-        contact: current.contact || undefined,
-        notes: mergedNotes,
+    // Razorpay notes are capped at 15 key-value pairs.
+    // If over limit, drop oldest existing keys but always keep the patch keys.
+    const MAX_NOTES_KEYS = 15;
+    let finalNotes = mergedNotes;
+    if (Object.keys(mergedNotes).length > MAX_NOTES_KEYS) {
+        const patchKeys = new Set(Object.keys(notesPatch || {}));
+        const extraKeys = Object.keys((current && current.notes) || {}).filter(k => !patchKeys.has(k));
+        const keepSlots = MAX_NOTES_KEYS - patchKeys.size;
+        const keptExtra = extraKeys.slice(-keepSlots);
+        finalNotes = {};
+        for (const k of keptExtra) finalNotes[k] = mergedNotes[k];
+        for (const k of patchKeys) finalNotes[k] = mergedNotes[k];
+        logWarn('[updateRazorpayCustomerNotes] trimmed notes to 15-key limit', {
+            customerId,
+            dropped: extraKeys.slice(0, extraKeys.length - keepSlots)
+        });
+    }
+
+    const putPayload = {
+        name: (current && current.name) || `customer_${customerId}`,
+        email: (current && current.email) || undefined,
+        contact: (current && current.contact) || undefined,
+        notes: finalNotes,
         fail_existing: '0'
+    };
+
+    logDebug('[updateRazorpayCustomerNotes] sending PUT', {
+        customerId,
+        noteKeys: Object.keys(finalNotes),
+        hasLitellmKey: !!finalNotes.litellm_key,
+        hasZipUrl: !!finalNotes.plugin_zip_url
     });
+
+    try {
+        await razorpay.put(`/customers/${encodeURIComponent(customerId)}`, putPayload);
+        logInfo('[updateRazorpayCustomerNotes] notes updated successfully', {
+            customerId,
+            noteKeys: Object.keys(finalNotes)
+        });
+    } catch (err) {
+        logError('[updateRazorpayCustomerNotes] PUT failed', err);
+        throw err; // re-throw so caller knows it failed
+    }
 }
 
 async function upsertRazorpayCustomerFromPayment(payment, orderContext) {
-    const email = normalizeEmail(payment.email || orderContext?.emailHint || null);
+    const rawEmail = normalizeEmail(payment.email || orderContext?.emailHint || null);
+    // Discard Razorpay placeholder — using it for lookup returns the wrong customer
+    const email = rawEmail && !isRazorpayPlaceholderEmail(rawEmail) ? rawEmail : null;
     const contact = normalizeRazorpayContact(payment.contact || orderContext?.contactHint || null);
-    const customerId = payment.customer_id || orderContext?.customerIdHint || null;
+    const customerId = String(payment.customer_id || orderContext?.customerIdHint || '').trim() || null;
     const flowType = String(orderContext?.flowType || 'paid_checkout');
     const litellmKey = normalizeLiteLlmKey(orderContext?.litellmKeyHint || null);
+
+    logDebug('[upsertRazorpayCustomer] resolving customer', {
+        hasCustomerId: !!customerId,
+        hasEmail: !!email,
+        rawEmailSkipped: rawEmail !== email,
+        hasContact: !!contact,
+        flowType
+    });
 
     const baseNotes = {
         flow_type: flowType,
@@ -1254,16 +1331,27 @@ async function recoverAndQueueFulfillment(orderId, options = {}) {
 // 4. Save key + zipUrl to Razorpay customer notes
 // 5. Save to fulfilled-orders.json  ← what check-key reads
 async function doWebhookFulfillment(orderId, paymentId) {
+    // ── Synchronous lock — must be checked/set BEFORE the first await ──────────
+    // Razorpay retries the webhook within milliseconds. fulfilled-orders.json
+    // hasn't been written yet when retry #2 arrives, so the file-based dedup
+    // check would miss it. The in-memory Set is visible instantly.
+    if (fulfillmentInProgress.has(orderId)) {
+        logInfo('[webhook-fulfillment] already in-progress (lock held), skipping duplicate', { orderId, paymentId });
+        return;
+    }
+    if (getFulfilledOrder(orderId)) {
+        logInfo('[webhook-fulfillment] already fulfilled (file), skipping', { orderId });
+        return;
+    }
+    if (paymentId && hasProcessedPaymentId(paymentId)) {
+        logInfo('[webhook-fulfillment] payment already processed, skipping', { orderId, paymentId });
+        return;
+    }
+
+    fulfillmentInProgress.add(orderId); // ← claim lock (synchronous, before any await)
+    logInfo('[webhook-fulfillment] lock acquired, starting', { orderId, paymentId });
+
     try {
-        // ── Deduplication check ────────────────────────────────────────
-        if (getFulfilledOrder(orderId)) {
-            logInfo('[webhook-fulfillment] already fulfilled, skipping', { orderId });
-            return;
-        }
-        if (paymentId && hasProcessedPaymentId(paymentId)) {
-            logInfo('[webhook-fulfillment] payment already processed, skipping', { orderId, paymentId });
-            return;
-        }
 
         // ── Ensure payment is captured ─────────────────────────────────
         logInfo('[webhook-fulfillment] checking payment capture status', { orderId, paymentId });
@@ -1370,6 +1458,8 @@ async function doWebhookFulfillment(orderId, paymentId) {
     } catch (err) {
         logError('[webhook-fulfillment] ❌ FAILED', err);
         // Do NOT crash — Razorpay will retry the webhook
+    } finally {
+        fulfillmentInProgress.delete(orderId); // release lock so retries can try again if it failed
     }
 }
 
