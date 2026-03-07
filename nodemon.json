@@ -1,0 +1,16 @@
+{
+    "watch": [
+        "src/",
+        "payment-config.json",
+        ".env"
+    ],
+    "ignore": [
+        "src/private/runtime/*",
+        "src/public/downloads/*",
+        "app_debug.log",
+        "node_modules"
+    ],
+    "ext": "js,json,ejs",
+    "exec": "node src/server.js",
+    "delay": "500"
+}
