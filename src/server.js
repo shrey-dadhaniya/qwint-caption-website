@@ -594,6 +594,26 @@ function isRazorpayPlaceholderEmail(email) {
     return !!email && RAZORPAY_VOID_EMAILS.has(String(email).trim().toLowerCase());
 }
 
+// ── Cookie helpers (no cookie-parser dependency) ─────────────────────────
+const BYPASS_COOKIE_NAME = '_qw_bypass';
+
+function parseCookies(req) {
+    const out = {};
+    const header = req.headers.cookie || '';
+    for (const part of header.split(';')) {
+        const idx = part.indexOf('=');
+        if (idx < 1) continue;
+        const key = part.slice(0, idx).trim();
+        const val = part.slice(idx + 1).trim();
+        out[key] = decodeURIComponent(val);
+    }
+    return out;
+}
+
+function hasBypassCookie(req) {
+    return parseCookies(req)[BYPASS_COOKIE_NAME] === '1';
+}
+
 function normalizePhone(phone) {
     if (!phone) return null;
     const value = String(phone).replace(/[^\d]/g, '').trim();
@@ -908,12 +928,22 @@ async function createRazorpayOrderForProduct(productId, options = {}) {
     ensureFlowProvidersConfigured();
     const product = getProductOrThrow(productId);
     const currency = String(runtimeConfig.payment_gateway.currency || 'INR').toUpperCase();
-    const amountPaise = Math.round(toNumber(product.amount_inr, 0) * 100);
-    if (!amountPaise) throw new Error(`Invalid amount configured for product "${product.id}"`);
+    const naturalAmountPaise = Math.round(toNumber(product.amount_inr, 0) * 100);
+    if (!naturalAmountPaise) throw new Error(`Invalid amount configured for product "${product.id}"`);
+
+    // Bypass mode: override amount to ₹1 (100 paise) — Razorpay minimum; true ₹0 is not supported.
+    const isBypass = !!options.bypass;
+    const amountPaise = isBypass ? 100 : naturalAmountPaise;
+    if (isBypass) {
+        logInfo('[checkout] bypass mode active — overriding amount to ₹1', {
+            productId, naturalAmountInr: product.amount_inr
+        });
+    }
     const flowType = String(options.flowType || 'paid_checkout');
     const notes = {
         flow_type: flowType,
         product_id: product.id,
+        ...(isBypass ? { bypass: 'true' } : {}),
         ...(options.notes || {})
     };
 
@@ -930,6 +960,7 @@ async function createRazorpayOrderForProduct(productId, options = {}) {
         orderId: order.id,
         productId: product.id,
         amountPaise,
+        bypass: isBypass,
         currency,
         flowType,
         createdAt: nowMs(),
@@ -1788,10 +1819,13 @@ app.post('/api/checkout', async (req, res) => {
         return res.status(400).json({ error: 'productId is required' });
     }
 
-    logInfo('[api/checkout] creating order', { productId });
+    const bypass = hasBypassCookie(req);
+    if (bypass) logInfo('[api/checkout] bypass cookie detected — order will be ₹1', { productId });
+
+    logInfo('[api/checkout] creating order', { productId, bypass });
     try {
-        const { order, product } = await createRazorpayOrderForProduct(productId);
-        logInfo('[api/checkout] order created', { orderId: order.id, productId, amount: order.amount });
+        const { order, product } = await createRazorpayOrderForProduct(productId, { bypass });
+        logInfo('[api/checkout] order created', { orderId: order.id, productId, amount: order.amount, bypass });
         return res.json({
             order,
             product,
@@ -2185,6 +2219,62 @@ app.post('/api/free-download', async (req, res) => {
 
 
 app.get('/health', (req, res) => res.send('OK'));
+
+// \u2500\u2500 Bypass route \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// GET /api/bypass?code=<BYPASS_CODE>&action=add|remove
+// Sets / clears a server-only httpOnly cookie that makes /api/checkout
+// create a \u20b91 Razorpay order instead of the real price.
+// Code is validated against process.env.BYPASS_CODE.
+// No frontend changes required \u2014 Razorpay popup still opens normally.
+app.get('/api/bypass', (req, res) => {
+    const code = String(req.query.code || '').trim();
+    const action = String(req.query.action || '').trim();
+    const envCode = String(process.env.BYPASS_CODE || '').trim();
+
+    if (!envCode) {
+        logWarn('[api/bypass] BYPASS_CODE env var is not set');
+        return res.status(503).json({ error: 'Bypass is not configured on this server' });
+    }
+
+    // Constant-time comparison to prevent timing attacks
+    const codeBuffer = Buffer.from(code.padEnd(64));
+    const envBuffer = Buffer.from(envCode.padEnd(64));
+    let mismatch = false;
+    try {
+        mismatch = !crypto.timingSafeEqual(codeBuffer, envBuffer);
+    } catch (_) {
+        mismatch = true;
+    }
+    if (!code || mismatch) {
+        logWarn('[api/bypass] invalid bypass code attempt', { ip: req.ip });
+        return res.status(403).json({ error: 'Invalid bypass code' });
+    }
+
+    if (action !== 'add' && action !== 'remove') {
+        return res.status(400).json({ error: 'action must be "add" or "remove"' });
+    }
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        path: '/'
+    };
+
+    if (action === 'add') {
+        res.cookie(BYPASS_COOKIE_NAME, '1', {
+            ...cookieOptions,
+            maxAge: 3 * 60 * 60 * 1000  // 3 hours
+        });
+        logInfo('[api/bypass] bypass cookie SET', { ip: req.ip });
+        return res.json({ ok: true, action: 'added', message: 'Bypass enabled. Payments will be \u20b91.' });
+    }
+
+    // action === 'remove'
+    res.clearCookie(BYPASS_COOKIE_NAME, cookieOptions);
+    logInfo('[api/bypass] bypass cookie CLEARED', { ip: req.ip });
+    return res.json({ ok: true, action: 'removed', message: 'Bypass disabled. Normal pricing restored.' });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
